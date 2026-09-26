@@ -15,8 +15,8 @@ The approach from the earlier discussion holds up, with three corrections:
    support the Basys-2's on-board USB port. That port is a Cypress FX2 running
    Digilent's closed "Adept" firmware, and Docker Desktop on macOS can't pass USB
    through to a container anyway. So programming has to run natively on macOS,
-   and the most reliable native route needs a cheap FTDI JTAG adapter
-   (see §8).
+   and the most reliable native route is an FTDI JTAG adapter. An FT4232H
+   mini module that's already on hand should do the job (see §8).
 2. **Yosys support for Spartan-3E is marked EXPERIMENTAL.** Yosys is still the
    front end I'd aim for, but XST (ISE's own synthesiser) stays in the container
    as a known-good reference and fallback.
@@ -158,10 +158,13 @@ current one is met.
       the full install and the intermediate layers).
 - [ ] Choose a fixed, locally administered MAC for the container, e.g.
       `02:42:ac:15:e3:01`. Every ISE container uses this MAC.
-- [ ] Decide on the JTAG adapter (§8) and order it now, since shipping is the
-      longest lead time.
+- [ ] Get the FT4232H mini module out, look up its VIO jumpers and header
+      pins in FTDI's datasheet, and get female–female jumper wires (§8, A1).
+      Plug it in and check that `openFPGALoader -c ft4232 --detect` sees the
+      FTDI chip, even before it's wired to the board.
 
-**Exit:** part number known, Docker settings confirmed, adapter ordered.
+**Exit:** part number known, Docker settings confirmed, JTAG adapter
+identified and seen by openFPGALoader.
 
 ### Phase 1: Get ISE and the license (1–2 h, mostly downloading)
 - [ ] Download `Xilinx_ISE_DS_Lin_14.7_1015_1.tar` and verify its checksum.
@@ -300,7 +303,7 @@ $(TOP).bit: $(TOP).ncd $(TOP).twr
 	$(ISE) bitgen -w -g StartUpClk:JtagClk $< $@ $(TOP).pcf
 
 sim:  ; iverilog -o sim.vvp tb/*.v rtl/*.v && vvp sim.vvp
-prog: $(TOP).bit ; openFPGALoader -c ft232 $<        # see §8
+prog: $(TOP).bit ; openFPGALoader -c ft4232 $<       # see §8
 .PHONY: sim prog
 ```
 Add a `make xst` target for the reference path and a `make flash` target for
@@ -343,7 +346,7 @@ basys2-ise-container/
 
 | # | Risk | Likelihood | Mitigation |
 |---|---|---|---|
-| R1 | No macOS-native way to use the on-board USB | **High** (confirmed for xc3sprog and openFPGALoader) | FTDI JTAG adapter (§8, option A) |
+| R1 | No macOS-native way to use the on-board USB | **High** (confirmed for xc3sprog and openFPGALoader) | FTDI JTAG adapter: the FT4232H mini module on hand, or buy one (§8, option A) |
 | R2 | openFPGALoader lacks the **xc3s100e** IDCODE | Confirmed for v1.1.1 | Use xc3sprog (which knows it), or add the IDCODE to openFPGALoader's part table (a one-line change worth sending upstream). Irrelevant if the board is a 250E. |
 | R3 | An ISE tool crashes under Rosetta | Medium | Turn Rosetta off → QEMU. Slower but more compatible. |
 | R4 | Yosys `xc3se` EDIF isn't accepted or misbehaves | Medium (EXPERIMENTAL) | XST reference path from Phase 3 |
@@ -362,42 +365,60 @@ The container can't do this (no USB passthrough), so it happens natively.
 Options, best first:
 
 ### Option A: FTDI JTAG adapter on the Basys-2 JTAG header (recommended)
-- Hardware: an **FT232H** or **FT2232H** breakout, roughly €15–30. Isabekov
-  has written up the wiring and the xc3sprog/OpenOCD usage for exactly this
-  board. Suggested parts:
-  - **Adafruit FT232H Breakout, USB-C (Adafruit #2264).** 229 SEK at
-    [Electrokit](https://www.electrokit.com/en/adafruit-ft232h-breakout)
-    (2026-09). Genuine FTDI chip, 3.3 V I/O, openFPGALoader cable `-c ft232`.
-    The header strip needs soldering, and you'll need female–female jumper
-    wires.
-  - **Digilent JTAG-HS2 (410-249).** No wiring: it plugs straight into the
-    Basys-2 6-pin header. 1.8–5 V targets, openFPGALoader cable
-    `-c digilent_hs2`. About $53+ ([Trenz](https://www.trenz-electronic.de/en/24624-JTAG-HS2-Programming-Cable)).
-  - Avoid no-name FT232H clones, since counterfeit FTDI chips are common.
-- Wiring for the Adafruit FT232H (use the labels printed on the Basys-2 next
-  to the header, not an assumed pin order):
+Isabekov has written up the wiring and the xc3sprog/OpenOCD usage for
+exactly this board.
 
-  | FT232H | Basys-2 JTAG |
+#### A1: FTDI FT4232H Mini Module, already on hand (first choice)
+- An FT4232H mini module is already in the parts inventory, so **nothing
+  needs to be bought** apart from female–female jumper wires. Both the module
+  and the Basys-2 have male header pins.
+- Only channels A and B of the FT4232H can do JTAG (via FTDI's MPSSE engine).
+  Use **channel A**. openFPGALoader already supports it as cable
+  **`-c ft4232`** (USB ID 0403:6011; checked against the installed v1.1.1).
+- **Before wiring:** the module's I/O pins only work once its I/O supply
+  (VIO) is jumpered correctly. Set the jumpers for USB bus power with **3.3 V
+  I/O**, per FTDI's FT4232H Mini Module datasheet. Take the header pin
+  positions of AD0–AD3 and GND from that same datasheet. They're deliberately
+  not guessed here.
+- Wiring, channel A (use the labels printed on the Basys-2 next to the
+  header, not an assumed pin order):
+
+  | FT4232H channel A | Basys-2 JTAG |
   |---|---|
-  | D0 | TCK |
-  | D1 | TDI |
-  | D2 | TDO |
-  | D3 | TMS |
+  | AD0 | TCK |
+  | AD1 | TDI |
+  | AD2 | TDO |
+  | AD3 | TMS |
   | GND | GND |
   | (leave unconnected) | VDD. Both boards are USB-powered, so don't tie their supplies together. |
-- Software: **openFPGALoader** (already installed; supports `ft232`/`ft2232`
-  cables and uses libftdi on macOS).
+
+#### A2: Buy an adapter (fallback if the FT4232H module doesn't work out)
+- **Adafruit FT232H Breakout, USB-C (Adafruit #2264).** 229 SEK at
+  [Electrokit](https://www.electrokit.com/en/adafruit-ft232h-breakout)
+  (2026-09). Genuine FTDI chip, 3.3 V I/O, openFPGALoader cable `-c ft232`.
+  Same wiring as above with D0–D3 in place of AD0–AD3. The header strip needs
+  soldering.
+- **Digilent JTAG-HS2 (410-249).** No wiring: it plugs straight into the
+  Basys-2 6-pin header. 1.8–5 V targets, openFPGALoader cable
+  `-c digilent_hs2`. About $53+ ([Trenz](https://www.trenz-electronic.de/en/24624-JTAG-HS2-Programming-Cable)).
+- Avoid no-name FT232H clones, since counterfeit FTDI chips are common.
+- Last resort: a 3.3 V FTDI TTL-serial cable (FT232R) can bit-bang JTAG over
+  its serial lines. It's slow and fiddly, so only for emergencies.
+
+#### Software (all Option A variants)
+- **openFPGALoader** (already installed; uses libftdi on macOS). Replace
+  `ft4232` below with `ft232` or `digilent_hs2` for the A2 adapters.
   - XC3S250E board: supported as-is.
-    `openFPGALoader -c ft232 --detect`, then `openFPGALoader -c ft232 top.bit`
+    `openFPGALoader -c ft4232 --detect`, then `openFPGALoader -c ft4232 top.bit`
   - XC3S100E board: needs the IDCODE added, or use **xc3sprog**, which knows
-    the 100E (`xc3sprog -c ft232h -j`, then `-p 0 top.bit`). xc3sprog has no
+    the 100E (`xc3sprog -c <cable> -j`, then `-p 0 top.bit`). xc3sprog has no
     Homebrew formula, so it would be a small source build against
     libftdi/libusb. That's one extra dependency, which is why patching
     openFPGALoader is the nicer route.
   - PROM (XCF02S, chain position 1): openFPGALoader knows `xcf02s`. Build a
     separate bitstream with `StartUpClk:CClk` for this.
 - **Why first:** deterministic, fully native, no closed firmware, fast. The
-  adapter also works for other boards later.
+  same setup also works for other boards later.
 
 ### Option B: on-board USB with open FX2 firmware (stretch goal)
 - The Basys-2's USB chip is a Cypress FX2. You can load open **ixo-usb-jtag**
@@ -419,8 +440,9 @@ Options, best first:
 - Cost: a VM to maintain just for programming. Only worth it if A and B are
   both off the table.
 
-**Recommendation:** order an FT232H breakout in Phase 0 and use Option A.
-Keep Option B as a weekend experiment.
+**Recommendation:** use the FT4232H mini module you already have
+(Option A1). Only buy an adapter (A2) if that doesn't work out. Keep Option B
+as a weekend experiment.
 
 ---
 
@@ -428,8 +450,9 @@ Keep Option B as a weekend experiment.
 
 1. Is the board an **XC3S100E or XC3S250E**? This decides whether
    openFPGALoader works unmodified.
-2. Is there an **FTDI adapter** (FT232H/FT2232H) around already, or should we
-   order one?
+2. ~~Is there an FTDI adapter around already?~~ Yes: an **FT4232H mini
+   module** is on hand (Option A1). Only female–female jumper wires are
+   needed.
 3. Should the flow ever include the ISE GUI or iMPACT? The plan assumes **no**
    (CLI only, no XQuartz).
 4. Is XST acceptable as the permanent synthesiser if yosys `xc3se` turns out
