@@ -160,10 +160,9 @@ current one is met.
       the full install and the intermediate layers).
 - [ ] Choose a fixed, locally administered MAC for the container, e.g.
       `02:42:ac:15:e3:01`. Every ISE container uses this MAC.
-- [ ] Get the FT4232H mini module out, look up its VIO jumpers and header
-      pins in FTDI's datasheet, and get female–female jumper wires (§8, A1).
-      Plug it in and check that `openFPGALoader -c ft4232 --detect` sees the
-      FTDI chip, even before it's wired to the board.
+- [ ] FT4232H Mini Module (Rev 1.1): fit the power jumpers (CN3-1↔CN3-3;
+      V3V3→all four VIO pins), get female–female jumper wires, and run
+      bring-up check 1 from §8 A1.
 
 **Exit:** part number known, Docker settings confirmed, JTAG adapter
 identified and seen by openFPGALoader.
@@ -372,28 +371,63 @@ Isabekov has written up the wiring and the xc3sprog/OpenOCD usage for
 exactly this board.
 
 #### A1: FTDI FT4232H Mini Module, already on hand (first choice)
-- An FT4232H mini module is already in the parts inventory, so **nothing
-  needs to be bought** apart from female–female jumper wires. Both the module
-  and the Basys-2 have male header pins.
-- Only channels A and B of the FT4232H can do JTAG (via FTDI's MPSSE engine).
-  Use **channel A**. openFPGALoader already supports it as cable
-  **`-c ft4232`** (USB ID 0403:6011; checked against the installed v1.1.1).
-- **Before wiring:** the module's I/O pins only work once its I/O supply
-  (VIO) is jumpered correctly. Set the jumpers for USB bus power with **3.3 V
-  I/O**, per FTDI's FT4232H Mini Module datasheet. Take the header pin
-  positions of AD0–AD3 and GND from that same datasheet. They're deliberately
-  not guessed here.
-- Wiring, channel A (use the labels printed on the Basys-2 next to the
-  header, not an assumed pin order):
+The module on hand is FTDI's own **FT4232H Mini Module, PCB Rev 1.1
+(©2010 FTDI Ltd)**, with a USB mini-B connector. That's exactly the board
+drawn in FTDI's datasheet
+[FT_000115, v1.8](https://web.archive.org/web/2016id_/http://www.ftdichip.com/Support/Documents/DataSheets/Modules/DS_FT4232H_Mini_Module.pdf)
+(FTDI's own copy is
+[here](https://ftdichip.com/wp-content/uploads/2020/07/DS_FT4232H_Mini_Module.pdf)).
+All pin numbers below come from that datasheet, tables 3.1 and 3.2 and §3.
 
-  | FT4232H channel A | Basys-2 JTAG |
-  |---|---|
-  | AD0 | TCK |
-  | AD1 | TDI |
-  | AD2 | TDO |
-  | AD3 | TMS |
-  | GND | GND |
-  | (leave unconnected) | VDD. Both boards are USB-powered, so don't tie their supplies together. |
+- **Nothing needs to be bought.** A 2.54 mm jumper shunt and a few
+  **female–female** jumper wires are enough. Both the module and the Basys-2
+  have male header pins.
+- USB ID is 0403:6011 (product string `FT4232H_MM`), which openFPGALoader
+  already knows as cable **`-c ft4232`** (checked against the installed
+  v1.1.1). Only channels A and B can do JTAG (via FTDI's MPSSE engine).
+  **Use channel A.**
+- **Headers:** CN2 and CN3 are 2×13 headers, 2.54 mm pitch, with pins
+  pointing **down** from the underside. Pin 1 has the square pad. Odd pins
+  (1, 3, 5, …) run along one row and even pins along the other.
+
+**Step 1: power jumpers (USB bus-powered, 3.3 V I/O).** Without these the
+FT4232H has no supply and its I/O pins are dead.
+
+| Link | From | To | Why |
+|---|---|---|---|
+| J1 | CN3-1 (VBUS) | CN3-3 (VCC) | Feeds USB 5 V to the module's 3.3 V regulator. These pins sit next to each other in the same row, so a **jumper shunt** fits. |
+| J2 | CN2-1/3/5 (V3V3) | **CN2-11, CN2-21, CN3-12, CN3-22** (VIO) | Powers the chip's I/O at 3.3 V. The VIO pins aren't next to V3V3, so this needs **wires**. The datasheet says to link all four VIO pins. |
+
+If the module is plugged into a carrier or dev board, check first whether
+that board already makes these links.
+
+**Step 2: JTAG wiring to the Basys-2** (use the labels printed on the
+Basys-2 next to its 6-pin JTAG header, not an assumed pin order):
+
+| FT4232H Mini Module | Signal | Basys-2 JTAG |
+|---|---|---|
+| CN2-7  (AD0) | TCK | TCK |
+| CN2-10 (AD1) | TDI | TDI |
+| CN2-9  (AD2) | TDO | TDO |
+| CN2-12 (AD3) | TMS | TMS |
+| CN2-2  (GND) | GND | GND |
+| (leave unconnected) | | VDD. Both boards are USB-powered, so don't tie their supplies together. |
+
+Note that AD1 and AD2 are **not** in pin order: AD2 is on CN2-9 and AD1 is
+on CN2-10.
+
+**Step 3: bring-up checks, in order**
+1. Set the power jumpers. Leave the Basys-2 disconnected and plug the module
+   into the Mac. `openFPGALoader -c ft4232 --detect` should open the cable.
+   It reports an empty or broken JTAG chain, which is expected since
+   nothing is connected yet.
+2. With the module unplugged, wire it to the Basys-2. Power the Basys-2 from
+   its own USB, then plug in the module. `--detect` should now show the
+   **XC3S100E** (IDCODE 0x?1C10093, "unknown" until the §8 patch) and the
+   **XCF02S**.
+3. If macOS's built-in FTDI serial driver stops libftdi from claiming the
+   device ("unable to claim"/"busy"), try running the command once with
+   `sudo`. That confirms the cause before looking for a permanent fix.
 
 #### A2: Buy an adapter (fallback if the FT4232H module doesn't work out)
 - **Adafruit FT232H Breakout, USB-C (Adafruit #2264).** 229 SEK at
@@ -482,9 +516,9 @@ as a weekend experiment.
 
 1. ~~XC3S100E or XC3S250E?~~ **XC3S100E.** openFPGALoader needs the one-line
    patch from §8. Still open: the speed grade (`-4` assumed).
-2. ~~Is there an FTDI adapter around already?~~ Yes: an **FT4232H mini
-   module** is on hand (Option A1). Only female–female jumper wires are
-   needed.
+2. ~~Is there an FTDI adapter around already?~~ Yes: an **FTDI FT4232H Mini
+   Module, Rev 1.1** is on hand (Option A1, pinout from the datasheet). Only
+   a jumper shunt and female–female jumper wires are needed.
 3. Should the flow ever include the ISE GUI or iMPACT? The plan assumes **no**
    (CLI only, no XQuartz).
 4. Is XST acceptable as the permanent synthesiser if yosys `xc3se` turns out
@@ -516,6 +550,7 @@ as a weekend experiment.
   [Isabekov: Basys2 + xc3sprog + FTDI](https://www.isabekov.pro/programming-basys2-using-xc3sprog-ftdi-based-jtag-adapter/),
   [Isabekov: FTDI adapter wiring for Basys2](https://www.isabekov.pro/connecting-external-ftdi-based-jtag-adapter-basys2-fpga-board/),
   [Isabekov: Basys2 + OpenOCD](https://www.isabekov.pro/programming-basys2-using-openocd-ftdi-based-jtag-adapter/),
+  [FTDI FT4232H Mini Module datasheet FT_000115 v1.8](https://ftdichip.com/wp-content/uploads/2020/07/DS_FT4232H_Mini_Module.pdf) ([archived copy](https://web.archive.org/web/2016id_/http://www.ftdichip.com/Support/Documents/DataSheets/Modules/DS_FT4232H_Mini_Module.pdf)),
   [mithro/ixo-usb-jtag](https://github.com/mithro/ixo-usb-jtag),
   [embed-dsp/ed_digilent_adept](https://github.com/embed-dsp/ed_digilent_adept),
   [Digilent Basys 2 reference manual](https://digilent.com/reference/programmable-logic/basys-2/reference-manual)
