@@ -3,7 +3,7 @@
 **Status:** plan only. Nothing in this document has been run yet.
 **Date:** 2026-09-26
 **Target machine:** `m2.local`, Apple M2, 24 GB RAM, macOS 27.0
-**Target board:** Digilent Basys-2 (Spartan-3E, XC3S100E or XC3S250E, CP132 package)
+**Target board:** Digilent Basys-2 (Spartan-3E **XC3S100E**, CP132 package)
 
 ---
 
@@ -114,11 +114,12 @@ openFPGALoader are already there.
   the host, and the container never sees the board.
 
 ### 3.4 Basys-2 specifics
-- JTAG chain: position 0 is the FPGA (XC3S100E or XC3S250E), position 1 is the
+- JTAG chain: position 0 is the FPGA (XC3S100E), position 1 is the
   **XCF02S** platform flash (non-volatile config).
-- The part string is typically `xc3s100e-cp132-4` or `xc3s250e-cp132-4`.
-  **Confirm the variant and speed grade from the chip marking** before
-  building.
+- The board is the **XC3S100E** variant, so the part string is
+  `xc3s100e-cp132-<speed>`. The plan assumes `-4`, but **confirm the speed
+  grade from the chip marking** (the digit after the `-` in e.g.
+  `XC3S100E-4CP132`).
 - **Bitgen gotcha:** bitstreams loaded over JTAG need
   `-g StartUpClk:JtagClk`. Bitstreams meant for the XCF02S PROM need
   `-g StartUpClk:CClk`. Getting this wrong is the classic "programmed OK but
@@ -151,7 +152,8 @@ Each phase has an exit criterion. We don't move to the next phase until the
 current one is met.
 
 ### Phase 0: Decisions and prerequisites (about 30 min)
-- [ ] Read the chip marking: **XC3S100E or XC3S250E**, speed grade.
+- [x] Chip variant: **XC3S100E** (confirmed).
+- [ ] Speed grade from the chip marking (`-4` assumed).
 - [ ] Docker Desktop → Settings → General: confirm **"Use Rosetta for
       x86_64/amd64 emulation on Apple Silicon"** is on. Check that the virtual
       disk limit is **≥ 80 GB** (the build needs room for the installer,
@@ -303,7 +305,8 @@ $(TOP).bit: $(TOP).ncd $(TOP).twr
 	$(ISE) bitgen -w -g StartUpClk:JtagClk $< $@ $(TOP).pcf
 
 sim:  ; iverilog -o sim.vvp tb/*.v rtl/*.v && vvp sim.vvp
-prog: $(TOP).bit ; openFPGALoader -c ft4232 $<       # see §8
+OFL   ?= openFPGALoader                          # patched build for xc3s100e, see §8
+prog: $(TOP).bit ; $(OFL) -c ft4232 $<
 .PHONY: sim prog
 ```
 Add a `make xst` target for the reference path and a `make flash` target for
@@ -347,7 +350,7 @@ basys2-ise-container/
 | # | Risk | Likelihood | Mitigation |
 |---|---|---|---|
 | R1 | No macOS-native way to use the on-board USB | **High** (confirmed for xc3sprog and openFPGALoader) | FTDI JTAG adapter: the FT4232H mini module on hand, or buy one (§8, option A) |
-| R2 | openFPGALoader lacks the **xc3s100e** IDCODE | Confirmed for v1.1.1 | Use xc3sprog (which knows it), or add the IDCODE to openFPGALoader's part table (a one-line change worth sending upstream). Irrelevant if the board is a 250E. |
+| R2 | openFPGALoader lacks the **xc3s100e** IDCODE | **Applies**: the board is a 100E, and upstream `main` still lacks it (2026-09) | Add the one-line part-table entry and build locally (§8, "XC3S100E patch"), then send it upstream. Fallback: xc3sprog. |
 | R3 | An ISE tool crashes under Rosetta | Medium | Turn Rosetta off → QEMU. Slower but more compatible. |
 | R4 | Yosys `xc3se` EDIF isn't accepted or misbehaves | Medium (EXPERIMENTAL) | XST reference path from Phase 3 |
 | R5 | License check fails in the container | Low–medium | Fixed `--mac-address`. Check the host ID from inside the container. Mount the license read-only. |
@@ -408,15 +411,44 @@ exactly this board.
 #### Software (all Option A variants)
 - **openFPGALoader** (already installed; uses libftdi on macOS). Replace
   `ft4232` below with `ft232` or `digilent_hs2` for the A2 adapters.
-  - XC3S250E board: supported as-is.
-    `openFPGALoader -c ft4232 --detect`, then `openFPGALoader -c ft4232 top.bit`
-  - XC3S100E board: needs the IDCODE added, or use **xc3sprog**, which knows
-    the 100E (`xc3sprog -c <cable> -j`, then `-p 0 top.bit`). xc3sprog has no
-    Homebrew formula, so it would be a small source build against
-    libftdi/libusb. That's one extra dependency, which is why patching
-    openFPGALoader is the nicer route.
+  - **This board is an XC3S100E, which openFPGALoader doesn't know yet**
+    (it isn't in v1.1.1 or upstream `main` as of 2026-09). See the patch
+    below.
+  - Once patched: `openFPGALoader -c ft4232 --detect`, then
+    `openFPGALoader -c ft4232 top.bit`.
+  - Fallback: **xc3sprog**, which knows the 100E (`xc3sprog -c <cable> -j`,
+    then `-p 0 top.bit`). It has no Homebrew formula, so it would be a source
+    build against libftdi/libusb and an extra dependency. That's why patching
+    openFPGALoader is the preferred route.
   - PROM (XCF02S, chain position 1): openFPGALoader knows `xcf02s`. Build a
     separate bitstream with `StartUpClk:CClk` for this.
+
+#### XC3S100E patch for openFPGALoader
+- openFPGALoader's `src/part.hpp` lists Spartan-3E parts next to each other:
+  ```cpp
+  /* Xilinx Spartan3 */
+  {0x01414093, {"xilinx", "spartan3",  "xc3s200",  6}},
+  {0x11c1a093, {"xilinx", "spartan3e", "xc3s250e", 6}},
+  {0x01c22093, {"xilinx", "spartan3e", "xc3s500e", 6}},
+  ```
+  Add one entry, with IR length 6 like its siblings:
+  ```cpp
+  {0x01c10093, {"xilinx", "spartan3e", "xc3s100e", 6}},
+  ```
+- `0x01C10093` is the XC3S100E IDCODE from the Spartan-3E datasheet (DS312).
+  openFPGALoader also retries a lookup with the version nibble masked off
+  (`src/jtag.cpp`), so any silicon revision matches. **Check it against the
+  real chip first:** before patching, `openFPGALoader -c ft4232 --detect`
+  reports the unknown IDCODE it read.
+- Build it locally with CMake. It uses the same libftdi/libusb that the
+  Homebrew install already pulled in, so no new dependencies. Keep it out of
+  `/opt/homebrew`, e.g. in `~/.local/bin`, or use it straight from the build
+  directory. Point the Makefile's `prog` target at it with `OFL ?=`.
+- Send the patch upstream as a PR. Once it's released, go back to the
+  Homebrew build.
+- The Spartan-3E family is already supported (xc3s250e and xc3s500e, and
+  Papilio One is listed as working), so the new entry shouldn't need any
+  other code changes. Verify by loading a blinky over JTAG.
 - **Why first:** deterministic, fully native, no closed firmware, fast. The
   same setup also works for other boards later.
 
@@ -448,8 +480,8 @@ as a weekend experiment.
 
 ## 9. Open questions for Ben
 
-1. Is the board an **XC3S100E or XC3S250E**? This decides whether
-   openFPGALoader works unmodified.
+1. ~~XC3S100E or XC3S250E?~~ **XC3S100E.** openFPGALoader needs the one-line
+   patch from §8. Still open: the speed grade (`-4` assumed).
 2. ~~Is there an FTDI adapter around already?~~ Yes: an **FT4232H mini
    module** is on hand (Option A1). Only female–female jumper wires are
    needed.
