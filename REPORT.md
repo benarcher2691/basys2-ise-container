@@ -160,9 +160,11 @@ current one is met.
       the full install and the intermediate layers).
 - [ ] Choose a fixed, locally administered MAC for the container, e.g.
       `02:42:ac:15:e3:01`. Every ISE container uses this MAC.
-- [ ] FT4232H Mini Module (Rev 1.1): fit the power jumpers (CN3-1↔CN3-3;
-      V3V3→all four VIO pins), get female–female jumper wires, and run
-      bring-up check 1 from §8 A1.
+- [x] FT4232H Mini Module (Rev 1.1): power jumper CN3-1↔CN3-3 and
+      V3V3→VIO wire fitted. The module works from macOS with
+      `openFPGALoader -c ft4232`, no `sudo` (2026-09-26). The JTAG wiring to
+      the Basys-2 is next; see
+      [docs/jtag-ft4232h-basys2.md](docs/jtag-ft4232h-basys2.md).
 
 **Exit:** part number known, Docker settings confirmed, JTAG adapter
 identified and seen by openFPGALoader.
@@ -322,7 +324,9 @@ the PROM (§8).
 ```
 basys2-ise-container/
 ├── REPORT.md              ← this document
-├── README.md              quick start (written after Phase 7)
+├── README.md              overview and doc index (quick start after Phase 7)
+├── docs/
+│   └── jtag-ft4232h-basys2.md   FT4232H → Basys-2 JTAG wiring and bring-up
 ├── .gitignore             *.tar, *.lic, build outputs (*.ngd, *.ncd, *.bit, …)
 ├── docker/
 │   ├── Dockerfile.full    Phase 2
@@ -379,10 +383,13 @@ drawn in FTDI's datasheet
 [here](https://ftdichip.com/wp-content/uploads/2020/07/DS_FT4232H_Mini_Module.pdf)).
 All pin numbers below come from that datasheet, tables 3.1 and 3.2 and §3.
 
+> **Step-by-step instructions** (wiring, checks, troubleshooting, progress):
+> [docs/jtag-ft4232h-basys2.md](docs/jtag-ft4232h-basys2.md).
+
 - **Nothing needs to be bought.** A 2.54 mm jumper shunt and a few
   **female–female** jumper wires are enough. Both the module and the Basys-2
   have male header pins.
-- USB ID is 0403:6011 (product string `FT4232H_MM`), which openFPGALoader
+- USB ID is 0403:6011 (it shows up in macOS as `FT4232H MiniModule`), which openFPGALoader
   already knows as cable **`-c ft4232`** (checked against the installed
   v1.1.1). Only channels A and B can do JTAG (via FTDI's MPSSE engine).
   **Use channel A.**
@@ -417,17 +424,26 @@ Note that AD1 and AD2 are **not** in pin order: AD2 is on CN2-9 and AD1 is
 on CN2-10.
 
 **Step 3: bring-up checks, in order**
-1. Set the power jumpers. Leave the Basys-2 disconnected and plug the module
-   into the Mac. `openFPGALoader -c ft4232 --detect` should open the cable.
-   It reports an empty or broken JTAG chain, which is expected since
-   nothing is connected yet.
+1. ✅ *(2026-09-26)* With both power links fitted and nothing on the JTAG
+   pins, the module appears as `FT4232H MiniModule` (0403:6011, with a
+   serial number). `openFPGALoader -c ft4232 --detect` exits with 0 and
+   finds no devices, as expected. **No `sudo` needed.**
 2. With the module unplugged, wire it to the Basys-2. Power the Basys-2 from
    its own USB, then plug in the module. `--detect` should now show the
    **XC3S100E** (IDCODE 0x?1C10093, "unknown" until the §8 patch) and the
    **XCF02S**.
-3. If macOS's built-in FTDI serial driver stops libftdi from claiming the
-   device ("unable to claim"/"busy"), try running the command once with
-   `sudo`. That confirms the cause before looking for a permanent fix.
+
+**Lessons from bring-up (2026-09-26):**
+- **Without the CN3-1↔CN3-3 jumper** the module doesn't appear on USB at all.
+- **Without the V3V3→VIO link** it does appear on USB, but as
+  `Quad RS232-HS` with no serial number (the settings EEPROM runs from VIO),
+  and openFPGALoader fails with `usb bulk write failed`, **even with
+  `sudo`**. So the VIO link is needed before anything else works, not just
+  for driving the JTAG pins.
+- macOS's built-in `com.apple.DriverKit-AppleUSBFTDI` attaches to all four
+  channels and creates `/dev/cu.usbserial-*` ports, but it **doesn't** stop
+  openFPGALoader from using channel A. No EEPROM PID change or driver
+  unloading is needed.
 
 #### A2: Buy an adapter (fallback if the FT4232H module doesn't work out)
 - **Adafruit FT232H Breakout, USB-C (Adafruit #2264).** 229 SEK at
