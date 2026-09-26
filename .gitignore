@@ -1,0 +1,16 @@
+# Xilinx installer and licenses: never commit (AMD licensing)
+*.tar
+*.lic
+
+# ISE / yosys build outputs
+*.edf
+*.ngd
+*.ncd
+*.pcf
+*.twr
+*.bit
+*.bgn
+*.mcs
+*.vvp
+_xmsgs/
+xlnx_auto_0_xdb/
