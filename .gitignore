@@ -14,3 +14,6 @@
 *.vvp
 _xmsgs/
 xlnx_auto_0_xdb/
+
+# Old VHDL archives and their extracted contents (see docs/data-inventory.md)
+data/
