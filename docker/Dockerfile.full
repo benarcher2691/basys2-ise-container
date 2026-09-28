@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1
+#
+# ise:14.7-full: Xilinx ISE 14.7 WebPACK, command-line tools only.
+# Build with docker/build.sh. The installer tarball comes in through a
+# named build context ("installer") and a bind mount, so it never becomes
+# an image layer. This image contains AMD software: keep it on this Mac,
+# never push it to a registry.
+
+# Ubuntu 14.04 amd64, pinned. Prior art (codepainters/ise14,
+# chriz2600/xilinx-ise) found ISE's bundled libraries clash with newer bases.
+FROM --platform=linux/amd64 ubuntu:14.04@sha256:881afbae521c910f764f7187dbfbca3cc10c26f8bafa458c76dda009a901c29d
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Runtime libraries the ISE binaries link against. Taken from the prior-art
+# recipes minus GUI-only ones (libxm4, libxp6) and cable ones (libusb).
+# Phase 6 trims this list with strace.
+#   libncurses5, libstdc++5       older ISE tools and the installer
+#   libglib2.0-0, libsm6, libxi6,
+#   libxrender1, libxrandr2,
+#   libfreetype6, libfontconfig1,
+#   libxtst6                      linked by ISE's shared libraries even when
+#                                 run without a display
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      libncurses5 libstdc++5 \
+      libglib2.0-0 libsm6 libxi6 libxrender1 libxrandr2 \
+      libfreetype6 libfontconfig1 libxtst6 \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY install.cfg /tmp/install.cfg
+
+# Extract, install and delete in one step so neither the tarball nor the
+# extracted installer ends up in a layer. `yes` answers the EULA prompts.
+RUN --mount=type=bind,from=installer,target=/installer \
+    mkdir /tmp/ise \
+ && tar -xf /installer/Xilinx_ISE_DS_Lin_14.7_1015_1.tar -C /tmp/ise \
+ && (yes | /tmp/ise/Xilinx_ISE_DS_Lin_14.7_1015_1/bin/lin64/batchxsetup -batch /tmp/install.cfg || true) \
+ && test -x /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/par \
+ && rm -rf /tmp/ise /tmp/install.cfg
+
+COPY entrypoint.sh /usr/local/bin/ise-entrypoint
+
+WORKDIR /work
+ENTRYPOINT ["/usr/local/bin/ise-entrypoint"]
+CMD ["bash"]

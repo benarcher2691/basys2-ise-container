@@ -156,13 +156,16 @@ current one is met.
 
 ### Phase 0: Decisions and prerequisites (about 30 min)
 - [x] Chip variant: **XC3S100E** (confirmed).
-- [ ] Speed grade from the chip marking (`-4` assumed).
-- [ ] Docker Desktop → Settings → General: confirm **"Use Rosetta for
+- [x] Speed grade from the chip marking: **`-4`** (`4C`, confirmed 2026-09-28).
+- [x] Docker Desktop → Settings → General: confirm **"Use Rosetta for
       x86_64/amd64 emulation on Apple Silicon"** is on. Check that the virtual
       disk limit is **≥ 80 GB** (the build needs room for the installer,
-      the full install and the intermediate layers).
-- [ ] Choose a fixed, locally administered MAC for the container, e.g.
-      `02:42:ac:15:e3:01`. Every ISE container uses this MAC.
+      the full install and the intermediate layers). *Checked 2026-09-28:
+      Docker 29.8.0, Rosetta registered for amd64, disk limit ~460 GB.*
+- [x] Choose a fixed, locally administered MAC for the container:
+      `02:42:ac:15:e3:01`. Every ISE container uses this MAC. **It needs an
+      internal Docker network, not `--network none`**, which leaves the
+      container with no `eth0`. See [docs/ise-container.md](docs/ise-container.md).
 - [x] FT4232H Mini Module (Rev 1.1): power jumper CN3-1↔CN3-3 and
       V3V3→VIO wire fitted. The module works from macOS with
       `openFPGALoader -c ft4232`, no `sudo` (2026-09-26). The JTAG wiring to
@@ -359,7 +362,7 @@ basys2-ise-container/
 | R2 | openFPGALoader lacks the **xc3s100e** IDCODE | **Applies**: the board is a 100E, and upstream `main` still lacks it (2026-09) | Add the one-line part-table entry and build locally (§8, "XC3S100E patch"), then send it upstream. Fallback: xc3sprog. |
 | R3 | An ISE tool crashes under Rosetta | Medium | Turn Rosetta off → QEMU. Slower but more compatible. |
 | R4 | Yosys `xc3se` EDIF isn't accepted or misbehaves | Medium (EXPERIMENTAL) | XST reference path from Phase 3 |
-| R5 | License check fails in the container | Low–medium | Fixed `--mac-address`. Check the host ID from inside the container. Mount the license read-only. |
+| R5 | License check fails in the container | Low–medium | Fixed `--mac-address` on an `--internal` network (`--network none` has no `eth0`). Check the host ID from inside the container. Mount the license read-only. |
 | R6 | Old base image vs Docker Desktop kernel/Rosetta (e.g. old glibc) | Low–medium | Try a newer base (16.04/18.04). ISE ships most of its own libraries. |
 | R7 | Disk fills up during the build | Low | Bind-mount the tarball, prune build cache, raise the Docker disk limit in Phase 0 |
 | R8 | macOS 28+ changes x86 translation | Future | Docs say macOS 27 integrates it. QEMU remains as a fallback. |

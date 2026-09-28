@@ -16,12 +16,14 @@ Developing for a **Digilent Basys-2 (Spartan-3E XC3S100E)** from an
 | [REPORT.md](REPORT.md) | The plan: architecture, phases, risks, programming options |
 | [docs/jtag-ft4232h-basys2.md](docs/jtag-ft4232h-basys2.md) | Step by step: FT4232H Mini Module as a JTAG adapter for the Basys-2 (wiring, checks, troubleshooting) |
 | [docs/basys2-board.md](docs/basys2-board.md) | Ben's Basys-2 (Rev D): photos, jumpers, power and voltage checks, and the missing FPGA JTAG header |
+| [docs/ise-container.md](docs/ise-container.md) | Building the ISE 14.7 container: download, build, smoke test, licence |
 | [docs/programming-options.md](docs/programming-options.md) | Decision input: how to program the Rev D board from macOS (adepttool, djtgcfg in a VM, soldered JTAG, new USB firmware) |
 | [docs/data-inventory.md](docs/data-inventory.md) | What's in the gitignored `data/`: old 2013–2015 Basys-2 VHDL projects, bitfiles, reference PDFs |
 
 ## Status
 
-- Plan written. The ISE container isn't built yet.
+- ISE container: Dockerfile and scripts in `docker/`, waiting for the ISE
+  14.7 installer download (see [docs/ise-container.md](docs/ise-container.md)).
 - Programming works (2026-09-28): `bin/basys2 prog file.bit` loads the
   Basys-2 FPGA from macOS over its own USB. No adapter or VM is needed.
   `bin/basys2 detect` lists the board and its JTAG chain.
