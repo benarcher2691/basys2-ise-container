@@ -1,0 +1,48 @@
+# Basys-2 (Rev D, XC3S100E-4 CP132): on-board I/O.
+# Pins as printed on the board (docs/basys2-board.md), same as Digilent's
+# master UCF. Use ngdbuild -aul so nets a design doesn't use are ignored.
+
+# 50 MHz main clock (MCLK; JP4 open = 50 MHz)
+NET "mclk" LOC = "B8";
+NET "mclk" TNM_NET = "mclk";
+TIMESPEC "TS_mclk" = PERIOD "mclk" 20 ns HIGH 50%;
+
+# LEDs LD0..LD7 (active high)
+NET "led<0>" LOC = "M5";
+NET "led<1>" LOC = "M11";
+NET "led<2>" LOC = "P7";
+NET "led<3>" LOC = "P6";
+NET "led<4>" LOC = "N5";
+NET "led<5>" LOC = "N4";
+NET "led<6>" LOC = "P4";
+NET "led<7>" LOC = "G1";
+
+# Slide switches SW0..SW7 (up = high)
+NET "sw<0>" LOC = "P11";
+NET "sw<1>" LOC = "L3";
+NET "sw<2>" LOC = "K3";
+NET "sw<3>" LOC = "B4";
+NET "sw<4>" LOC = "G3";
+NET "sw<5>" LOC = "F3";
+NET "sw<6>" LOC = "E2";
+NET "sw<7>" LOC = "N3";
+
+# Push buttons BTN0..BTN3 (pressed = high)
+NET "btn<0>" LOC = "G12";
+NET "btn<1>" LOC = "C11";
+NET "btn<2>" LOC = "M4";
+NET "btn<3>" LOC = "A7";
+
+# 7-segment display (anodes and segments active low)
+NET "an<0>" LOC = "F12";
+NET "an<1>" LOC = "J12";
+NET "an<2>" LOC = "M13";
+NET "an<3>" LOC = "K14";
+NET "seg<0>" LOC = "L14";  # CA
+NET "seg<1>" LOC = "H12";  # CB
+NET "seg<2>" LOC = "N14";  # CC
+NET "seg<3>" LOC = "N11";  # CD
+NET "seg<4>" LOC = "P12";  # CE
+NET "seg<5>" LOC = "L13";  # CF
+NET "seg<6>" LOC = "M12";  # CG
+NET "dp"     LOC = "N13";  # DP

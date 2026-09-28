@@ -8,10 +8,14 @@ image=${1:-ise:14.7-full}
 docker run --rm --platform linux/amd64 --network none "$image" bash -c '
     status=0
     for tool in xst ngdbuild map par trce bitgen; do
-        if out=$("$tool" -h 2>&1); then
-            echo "ok    $tool: $(echo "$out" | grep -m1 -E "Release|Xilinx|Usage" || true)"
+        # Judge by the output: ngdbuild and map exit non-zero after -h.
+        start=$(date +%s)
+        out=$("$tool" -h 2>&1) || true
+        secs=$(( $(date +%s) - start ))
+        if echo "$out" | grep -qiE "Release 14\.7|^usage|^$tool:"; then
+            echo "ok    $tool (${secs}s): $(echo "$out" | grep -m1 -E "Release" || echo "help printed")"
         else
-            echo "FAIL  $tool"; echo "$out" | tail -5; status=1
+            echo "FAIL  $tool (${secs}s)"; echo "$out" | tail -5; status=1
         fi
     done
     exit $status

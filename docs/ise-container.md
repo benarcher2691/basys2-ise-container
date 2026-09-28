@@ -8,42 +8,53 @@ REPORT.md Phases 1–2, made concrete. Files: `docker/`.
 |---|---|
 | Docker Desktop 29.8.0, Rosetta for amd64 on, disk limit ~460 GB | ✅ checked |
 | Base image `ubuntu:14.04` (amd64), pinned by digest; its package archive still works | ✅ |
-| Dockerfile, install config, entrypoint, build and smoke-test scripts | ✅ written; tried up to the installer step |
-| 1. Download the installer | ⬜ **Ben** (needs an AMD account) |
-| 2. Build `ise:14.7-full` | ⬜ |
-| 3. Smoke test | ⬜ |
-| 4. Licence | ⬜ (first check whether one is needed at all) |
+| 1. ISE files: extracted from AMD's ISE 14.7 VM download | ✅ `ise-14.7-ISE_DS.tar`, 12.3 GB |
+| 2. Build `ise:14.7-full` | ✅ 4.5 GB image, ~6 min build |
+| 3. Smoke test | ✅ all six tools start (but slowly, see below) |
+| 4. Licence | ⛔ **needed**: `xst` and `ngdbuild` run without one, `map` refuses. **Ben:** get it (steps below) |
+| Blinky (`examples/blinky`) | ✅ synthesised (16 slices) and translated; stops at `map` until the licence is in place |
 
-## 1. Download the installer (manual)
+## 1. Get the ISE files
 
-1. On amd.com, go to **Support → Downloads → Adaptive SoCs & FPGAs → Legacy
-   ISE → 14.7**. Pick the **Linux** "Full Installer" (TAR), about 6 GB, file
-   `Xilinx_ISE_DS_Lin_14.7_1015_1.tar`. It needs an AMD account and an
-   export-compliance form.
-2. Put it on its own in `~/Downloads/xilinx/`. The build sends everything in
-   that directory to Docker.
-3. Check it against the checksum shown on the download page (the page loads
-   its content with JavaScript, so it can't be scripted from here):
-   ```sh
-   md5 ~/Downloads/xilinx/Xilinx_ISE_DS_Lin_14.7_1015_1.tar
-   ```
-   Note the value here once it's verified: `<md5>`
+AMD's download is **`Xilinx_ISE_14.7_Win10_14.7_VM_0213_1.zip`** (16.7 GB),
+the "ISE 14.7 for Windows 10" package. Despite the name, it holds a
+VirtualBox VM (`ova/14.7_VM.ova`): **Oracle Linux 6.4 with ISE 14.7 already
+installed** in `/opt/Xilinx/14.7/ISE_DS`. That's build `14.7_1015_1`, the
+same as the Linux installer. We don't run the VM; we copy the install out of
+its disk:
+
+```sh
+docker/extract-from-vm.sh      # zip in ~/Downloads → ~/Downloads/xilinx/ise-14.7-ISE_DS.tar
+```
+
+- **What it does:**
+  1. Unpacks the OVA from the zip. The zip itself is only read.
+  2. In a privileged arm64 Linux container, converts the VM disk to a raw
+     image (on the Docker volume `ise-vm-work`).
+  3. Mounts the root partition (ext4, no LVM) read-only.
+  4. Tars `ISE_DS/ISE`, `common`, `.xinstall` and the settings scripts.
+- **Left out:** EDK (5 GB), PlanAhead (3.6 GB) and SysGen. `settings64.sh`
+  skips components that aren't there.
+- **Space:** the intermediates need about 17 GB (the OVA) plus about 40 GB
+  in Docker's disk. The script prints the clean-up commands at the end.
+- The VM contains **no licence file**. Its first network adapter's MAC was
+  `08:00:27:68:C9:35`.
+
+The Linux installer (`Xilinx_ISE_DS_Lin_14.7_1015_1.tar`) would work too,
+but it isn't needed now.
 
 ## 2. Build
 
 ```sh
-docker/build.sh            # or: docker/build.sh /path/to/installer-dir
+docker/build.sh            # or: docker/build.sh /path/to/dir-with-the-tar
 ```
 
-- Builds `ise:14.7-full` from `docker/Dockerfile.full`, for linux/amd64
-  under Rosetta.
-- The tarball comes in as a named build context and a bind mount. It's
-  extracted, installed and deleted in one step, so neither the tarball nor
-  the extracted files end up in a layer.
-- The install config (`docker/install.cfg`) selects WebPACK only. The licence
-  manager, cable drivers and environment setup are all off.
-- Expect about 20 GB of image and an unattended run of roughly an hour.
-  Afterwards, `docker builder prune` frees the build cache.
+- Builds `ise:14.7-full` from `docker/Dockerfile.full` for linux/amd64 (run
+  under Rosetta).
+- The tar comes in as a named build context (`ise`) and a bind mount, and is
+  unpacked to `/opt/Xilinx/14.7/ISE_DS`. The image is about 12 GB.
+  Afterwards, `docker builder prune` frees the copy of the tar in the build
+  cache.
 
 ## 3. Smoke test (Phase 2 exit)
 
@@ -54,23 +65,47 @@ docker/smoke-test.sh
 This runs `xst`, `ngdbuild`, `map`, `par`, `trce` and `bitgen` with `-h`,
 with `--network none`. Each should print `ok`.
 
-## 4. Licence and network
+## 4. Licence (needed for map, par, bitgen)
 
-- **Try without a licence first.** The XC3S100E is a WebPACK part. Run the
-  Phase 3 flow and see whether any tool complains about a licence. If none
-  does, skip the rest of this section.
-- **If a licence is needed,** it's node-locked to a MAC address. That doesn't
-  work with `--network none`: the container then has **no `eth0` and no
-  MAC** (checked 2026-09-28). Use an **internal Docker network** instead. It
-  gives the container an `eth0` with a fixed MAC but no route out (also
-  checked: DNS fails).
-  ```sh
-  docker network create --internal ise-internal     # once (already created)
-  docker run --rm --network ise-internal --mac-address 02:42:ac:15:e3:01 \
-      -v ~/.config/xilinx/Xilinx.lic:/root/.Xilinx/Xilinx.lic:ro \
-      ise:14.7-full <tool> ...
-  ```
-  Request the WebPACK licence from AMD's licensing site for host ID
-  `02:42:ac:15:e3:01` (the site takes it without colons), and store it at
-  `~/.config/xilinx/Xilinx.lic`. It's never committed, since `*.lic` is
-  gitignored.
+Tried 2026-09-28 with no licence: `xst` and `ngdbuild` run fine, then `map`
+stops with `ERROR:Security:9c - No 'ISE' nor 'WebPack' feature version
+2013.10 was available for part 'xc3s100e'`. The WebPACK licence is free, but
+it's node-locked to a host ID.
+
+**The container's host ID is `0242AC15E301`.** `bin/ise` always runs the
+container on the internal Docker network `ise-internal` with MAC
+`02:42:ac:15:e3:01`: `eth0` exists, but there's no route out (DNS fails).
+Check it with `bin/ise lmutil lmhostid`. With `--network none` there's no
+`eth0` and the host ID is `000000000000`, so that setting can't be used.
+
+Getting it (needs Ben's AMD account):
+
+1. Open https://www.xilinx.com/getlicense and sign in (it redirects to
+   AMD's Product Licensing site).
+2. **Create New Licenses** → under *Certificate Based Licenses*, tick
+   **ISE WebPACK License** → **Generate Node-Locked License**.
+3. Host: add a new host with **Host ID type: Ethernet MAC**, value
+   **`0242AC15E301`**, name e.g. `basys2-ise-container`. Then **Next →
+   Next** to generate it.
+4. Download `Xilinx.lic` (it's also e-mailed) and save it as
+   **`~/.config/xilinx/Xilinx.lic`**:
+   ```sh
+   mkdir -p ~/.config/xilinx && mv ~/Downloads/Xilinx.lic ~/.config/xilinx/
+   ```
+   `bin/ise` mounts it read-only when it's there. It's never committed
+   (`*.lic` is gitignored).
+5. Build and load the example:
+   ```sh
+   make -C examples/blinky && make -C examples/blinky prog
+   ```
+
+## 5. Known issue: slow tool start-up
+
+Every ISE tool takes **about 70 s to start** under Rosetta, even for `-h`.
+The actual work is fast: XST reports 3 s and ngdbuild 2 s for the blinky.
+The time is CPU-bound, split about evenly between the small `bin/lin64/<tool>`
+wrapper and the real `unwrapped/<tool>`. It isn't the network, the licence
+lookup or the open-files limit (all tested). The likely cause is Rosetta
+translating ISE's large libraries on every launch. To try later: Rosetta's
+translation cache, QEMU for comparison, and calling `unwrapped/` directly.
+A full flow of six tools therefore takes about 7 minutes.

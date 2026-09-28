@@ -21,3 +21,6 @@ data/
 # Python venv for bin/basys2 (tools/adepttool)
 .venv/
 __pycache__/
+
+# Example build outputs
+examples/*/build/

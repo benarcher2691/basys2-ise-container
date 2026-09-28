@@ -173,7 +173,8 @@ current one is met.
       [docs/jtag-ft4232h-basys2.md](docs/jtag-ft4232h-basys2.md).
 
 **Exit:** part number known, Docker settings confirmed, JTAG adapter
-identified and seen by openFPGALoader.
+identified and seen by openFPGALoader. *(2026-09-28: done; programming
+now goes through `bin/basys2` instead of a JTAG adapter.)*
 
 ### Phase 1: Get ISE and the license (1–2 h, mostly downloading)
 - [ ] Download `Xilinx_ISE_DS_Lin_14.7_1015_1.tar` and verify its checksum.
@@ -182,7 +183,10 @@ identified and seen by openFPGALoader.
 - [ ] Get a WebPACK license from the AMD licensing site, node-locked to the
       MAC chosen in Phase 0. Store it in `~/.config/xilinx/Xilinx.lic`.
 
-**Exit:** verified tarball and a `.lic` file on disk.
+**Exit:** verified tarball and a `.lic` file on disk. *(2026-09-28: ISE came
+from AMD's "ISE 14.7 for Windows 10" VM download instead, extracted by
+`docker/extract-from-vm.sh`. The licence is still to do; see
+[docs/ise-container.md](docs/ise-container.md).)*
 
 ### Phase 2: Build the full image `ise:14.7-full` (2–4 h, mostly unattended)
 - Dockerfile outline:

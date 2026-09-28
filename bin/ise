@@ -1,0 +1,29 @@
+#!/bin/sh
+# Run an ISE 14.7 tool in the container, in the current directory.
+# Usage: bin/ise <tool> [args...]   e.g. bin/ise xst -ifn top.xst
+# The repo is mounted at /work, so paths must stay inside the repo.
+#
+# Network: an --internal Docker network (no route out) with a fixed MAC,
+# because the WebPACK licence is node-locked to it (FLEXnet host ID
+# 0242ac15e301). --network none would leave no eth0 and host ID 000000000000.
+# The licence, if present, is mounted read-only from ~/.config/xilinx/.
+set -eu
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+case $PWD/ in
+    "$root"/*) rel=${PWD#"$root"} ;;
+    *) echo "bin/ise: run it from inside $root" >&2; exit 2 ;;
+esac
+
+net=ise-internal
+mac=02:42:ac:15:e3:01
+lic=$HOME/.config/xilinx/Xilinx.lic
+
+docker network inspect "$net" >/dev/null 2>&1 ||
+    docker network create --internal "$net" >/dev/null
+
+set -- -v "$root":/work -w "/work$rel" "${ISE_IMAGE:-ise:14.7-full}" "$@"
+[ -f "$lic" ] && set -- -v "$lic":/root/.Xilinx/Xilinx.lic:ro "$@"
+
+exec docker run --rm --platform linux/amd64 \
+    --network "$net" --mac-address "$mac" "$@"
