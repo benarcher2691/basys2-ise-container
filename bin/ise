@@ -15,6 +15,12 @@ case $PWD/ in
     *) echo "bin/ise: run it from inside $root" >&2; exit 2 ;;
 esac
 
+# ISE_EXEC=<container>: run in that already running container instead of a
+# new one (used by docker/trace-files.sh to record which files ISE opens).
+if [ -n "${ISE_EXEC:-}" ]; then
+    exec docker exec -w "/work$rel" "$ISE_EXEC" /usr/local/bin/ise-entrypoint "$@"
+fi
+
 net=ise-internal
 mac=02:42:ac:15:e3:01
 lic=$HOME/.config/xilinx/Xilinx.lic

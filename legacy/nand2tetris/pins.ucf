@@ -1,0 +1,34 @@
+NET "mclk" LOC = "B8";
+NET "mclk" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "reset" LOC = "G12";
+
+# Pin assignment for DispCtl
+# Connected to Basys2 onBoard 7seg display
+NET "seg<0>" LOC = "L14"; # Bank = 1, Signal name = CA
+NET "seg<1>" LOC = "H12"; # Bank = 1, Signal name = CB
+NET "seg<2>" LOC = "N14"; # Bank = 1, Signal name = CC
+NET "seg<3>" LOC = "N11"; # Bank = 2, Signal name = CD
+NET "seg<4>" LOC = "P12"; # Bank = 2, Signal name = CE
+NET "seg<5>" LOC = "L13"; # Bank = 1, Signal name = CF
+NET "seg<6>" LOC = "M12"; # Bank = 1, Signal name = CG
+NET "seg<7>" LOC = "N13"; # Bank = 1, Signal name = DP
+
+NET "an<3>" LOC = "K14"; # Bank = 1, Signal name = AN3
+NET "an<2>" LOC = "M13"; # Bank = 1, Signal name = AN2
+NET "an<1>" LOC = "J12"; # Bank = 1, Signal name = AN1
+NET "an<0>" LOC = "F12"; # Bank = 1, Signal name = AN0
+
+NET "sw<3>" LOC = "B4";  # Bank = 3, Signal name = SW3
+NET "sw<2>" LOC = "K3";  # Bank = 3, Signal name = SW2
+NET "sw<1>" LOC = "L3";  # Bank = 3, Signal name = SW1
+NET "sw<0>" LOC = "P11"; # Bank = 2, Signal name = SW0
+
+net pcOUT<5> loc = b2;
+net pcOUT<4> loc = j3;
+net pcOUT<3> loc = c6;
+net pcOUT<2> loc = c5;
+net pcOUT<1> loc = a9;
+net pcOUT<0> loc = a10;
+
+net clkOUT loc = c13;
+net resetOUT loc = c12;

@@ -9,6 +9,7 @@
 # and then does `include <path>/mk/ise.mk`. Targets:
 #
 #   make          build/$(TOP).bit, StartUpClk:JtagClk, for loading over JTAG
+#                 (SYNTH=yosys: build-yosys/$(TOP).bit, yosys instead of XST)
 #   make prog     load it into the FPGA (bin/basys2 prog, lost at power-off)
 #   make flash    write it to the XCF02S flash so it survives power-off, then
 #                 reload the FPGA from there (needs JP3 on ROM)
@@ -23,62 +24,82 @@ PART  ?= xc3s100e-cp132-4
 UCF   ?= $(ROOT)/boards/basys2/basys2.ucf
 CORES ?=
 
+# SYNTH=xst (default) or SYNTH=yosys. yosys (Spartan-3E support is
+# EXPERIMENTAL) runs natively and writes EDIF; its outputs go to build-yosys/.
+SYNTH ?= xst
+ifeq ($(SYNTH),yosys)
+B          := build-yosys
+NETLIST    := $(TOP).edf
+SYNTH_DEPS  = $(B)/$(TOP).edf
+SYNTH_CMD  :=
+else
+B          := build
+NETLIST    := $(TOP).ngc
+SYNTH_DEPS  = $(B)/$(TOP).prj $(B)/$(TOP).xst
+SYNTH_CMD  := xst -ifn $(TOP).xst -ofn $(TOP).syr &&
+endif
+
 XST_OPTS    ?= -opt_mode Speed -opt_level 1
 BITGEN_OPTS ?=
 
 # Paths as the container sees them: the repo is mounted at /work.
 ctr = $(patsubst $(ROOT)/%,/work/%,$(abspath $(1)))
 
-all: build/$(TOP).bit
+all: $(B)/$(TOP).bit
 
-build/$(TOP).prj: $(SRCS) | build
+# yosys: native synthesis to EDIF (Verilog only), ISE from ngdbuild on.
+$(B)/$(TOP).edf: $(SRCS) | $(B)
+	yosys -q -l $(B)/yosys.log -p 'read_verilog $(SRCS); synth_xilinx -family xc3se -top $(TOP) -ise -edif $@'
+	@grep -A30 'Printing statistics' $(B)/yosys.log | grep -E 'cells|FD|LUT|MUXCY|XORCY|BUF|RAM' | head -12 || true
+
+$(B)/$(TOP).prj: $(SRCS) | $(B)
 	@for s in $(foreach s,$(SRCS),$(call ctr,$(s))); do \
 	    case $$s in *.vhd|*.vhdl) l=vhdl ;; *) l=verilog ;; esac; \
 	    echo "$$l work \"$$s\""; \
 	done > $@
 
-build/$(TOP).xst: | build
+$(B)/$(TOP).xst: | $(B)
 	@printf 'run\n-ifn $(TOP).prj\n-ifmt mixed\n-top $(TOP)\n-ofn $(TOP).ngc\n-ofmt NGC\n-p $(PART)\n%s\n' \
 	    "$$(echo '$(XST_OPTS)' | tr ' ' '\n' | paste -d' ' - -)" > $@
 
-build/$(TOP).bit: build/$(TOP).prj build/$(TOP).xst $(SRCS) $(UCF)
-	cd build && $(ISE) bash -euc ' \
-	    xst -ifn $(TOP).xst -ofn $(TOP).syr && \
+$(B)/$(TOP).bit: $(SYNTH_DEPS) $(SRCS) $(UCF)
+	cd $(B) && $(ISE) bash -euc ' \
+	    $(SYNTH_CMD) \
 	    ngdbuild -aul -p $(PART) $(foreach c,$(CORES),-sd $(call ctr,$(c))) \
-	        -uc $(call ctr,$(UCF)) $(TOP).ngc $(TOP).ngd && \
+	        -uc $(call ctr,$(UCF)) $(NETLIST) $(TOP).ngd && \
 	    map -w -p $(PART) -o $(TOP)_map.ncd $(TOP).ngd $(TOP).pcf && \
 	    par -w $(TOP)_map.ncd $(TOP).ncd $(TOP).pcf && \
 	    trce -v 10 -o $(TOP).twr $(TOP).ncd $(TOP).pcf && \
 	    bitgen -w -g StartUpClk:JtagClk $(BITGEN_OPTS) $(TOP).ncd $(TOP).bit'
-	@grep -hE 'Timing errors|All constraints were met|constraints? (was|were) not met' build/$(TOP).twr build/$(TOP).par 2>/dev/null | sort -u || true
+	@grep -hE 'Timing errors|All constraints were met|constraints? (was|were) not met' $(B)/$(TOP).twr $(B)/$(TOP).par 2>/dev/null | sort -u || true
 
-prog: build/$(TOP).bit
+prog: $(B)/$(TOP).bit
 	$(ROOT)/bin/basys2 prog $<
 
 # Flash: a CClk bitstream (the FPGA clocks itself from the PROM), turned into
 # an XCF02S image by promgen, and an erase/program/verify SVF from iMPACT,
 # played over USB by bin/basys2. Chain: TDI → xc3s100e (1) → xcf02s (2) → TDO.
-build/$(TOP)_flash.svf: build/$(TOP).bit
+$(B)/$(TOP)_flash.svf: $(B)/$(TOP).bit
 	printf '%s\n' 'setMode -bs' \
-	    'setCable -port svf -file "$(call ctr,build/$(TOP)_flash.svf)"' \
+	    'setCable -port svf -file "$(call ctr,$(B)/$(TOP)_flash.svf)"' \
 	    'addDevice -p 1 -part xc3s100e' 'addDevice -p 2 -part xcf02s' \
-	    'assignFile -p 2 -file "$(call ctr,build/$(TOP).mcs)"' \
-	    'program -p 2 -e -v' 'closeCable' 'quit' > build/$(TOP)_flash.cmd
-	(cd build && $(ISE) bash -euc ' \
+	    'assignFile -p 2 -file "$(call ctr,$(B)/$(TOP).mcs)"' \
+	    'program -p 2 -e -v' 'closeCable' 'quit' > $(B)/$(TOP)_flash.cmd
+	(cd $(B) && $(ISE) bash -euc ' \
 	    bitgen -w -g StartUpClk:CClk $(BITGEN_OPTS) $(TOP).ncd $(TOP)_prom.bit && \
 	    promgen -w -p mcs -c FF -x xcf02s -o $(TOP).mcs -u 0 $(TOP)_prom.bit && \
-	    impact -batch $(TOP)_flash.cmd') > build/$(TOP)_flash.log 2>&1 || \
-	    { tail -20 build/$(TOP)_flash.log; exit 1; }
-	@grep -E "Programming completed|Verification completed|ERROR" build/$(TOP)_flash.log || true
+	    impact -batch $(TOP)_flash.cmd') > $(B)/$(TOP)_flash.log 2>&1 || \
+	    { tail -20 $(B)/$(TOP)_flash.log; exit 1; }
+	@grep -E "Programming completed|Verification completed|ERROR" $(B)/$(TOP)_flash.log || true
 
-flash: build/$(TOP)_flash.svf
+flash: $(B)/$(TOP)_flash.svf
 	$(ROOT)/bin/basys2 svf $<
 	$(ROOT)/bin/basys2 reload
 
-build:
-	mkdir -p build
+$(B):
+	mkdir -p $@
 
 clean:
-	rm -rf build
+	rm -rf build build-yosys
 
 .PHONY: all prog flash clean
