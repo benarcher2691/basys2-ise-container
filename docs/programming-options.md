@@ -141,6 +141,7 @@ to our adepttool copy plays it over the board's USB:
 ```sh
 make -C legacy/kronometer5 flash   # any project using mk/ise.mk
 make -C boards/basys2 factory      # put Digilent's factory demo back
+make -C boards/basys2 verify-factory  # read-only: does the flash hold the factory demo?
 bin/basys2 reload                  # FPGA reloads from flash (like a power cycle)
 ```
 

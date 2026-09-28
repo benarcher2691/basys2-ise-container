@@ -28,6 +28,7 @@ make -C examples/blinky prog         # load into the FPGA over USB (lost at powe
 make -C examples/blinky flash        # write to the flash: survives power-off (JP3 on ROM)
 make -C examples/blinky SYNTH=yosys  # yosys instead of XST (Verilog only)
 make -C boards/basys2 factory        # put the factory demo back in the flash
+make -C boards/basys2 verify-factory # check the flash holds the factory demo (read-only)
 bin/basys2 detect | reload           # show the JTAG chain / reload the FPGA from flash
 ```
 

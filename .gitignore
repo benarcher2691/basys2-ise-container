@@ -26,8 +26,6 @@ __pycache__/
 build/
 build-yosys/
 
-# Scratch for flash tests
-.flash-test/
 
 # Regression and trace scratch
 .regress/
