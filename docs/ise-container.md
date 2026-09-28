@@ -10,7 +10,7 @@ REPORT.md Phases 1–2, made concrete. Files: `docker/`.
 | Base image `ubuntu:14.04` (amd64), pinned by digest; its package archive still works | ✅ |
 | 1. ISE files: extracted from AMD's ISE 14.7 VM download | ✅ `ise-14.7-ISE_DS.tar`, 12.3 GB |
 | 2. Build `ise:14.7-full` | ✅ 4.5 GB image, ~6 min build |
-| 3. Smoke test | ✅ all six tools start (but slowly, see below) |
+| 3. Smoke test | ✅ all six tools start, ~35 s each (see §5) |
 | 4. Licence | ⛔ **needed**: `xst` and `ngdbuild` run without one, `map` refuses. **Ben:** get it (steps below) |
 | Blinky (`examples/blinky`) | ✅ synthesised (16 slices) and translated; stops at `map` until the licence is in place |
 
@@ -101,11 +101,19 @@ Getting it (needs Ben's AMD account):
 
 ## 5. Known issue: slow tool start-up
 
-Every ISE tool takes **about 70 s to start** under Rosetta, even for `-h`.
+Every ISE tool takes **about 35 s to start** under Rosetta, even for `-h`.
 The actual work is fast: XST reports 3 s and ngdbuild 2 s for the blinky.
-The time is CPU-bound, split about evenly between the small `bin/lin64/<tool>`
-wrapper and the real `unwrapped/<tool>`. It isn't the network, the licence
-lookup or the open-files limit (all tested). The likely cause is Rosetta
-translating ISE's large libraries on every launch. To try later: Rosetta's
-translation cache, QEMU for comparison, and calling `unwrapped/` directly.
-A full flow of six tools therefore takes about 7 minutes.
+What was tested (2026-09-28):
+
+| Test | Result |
+|---|---|
+| Network (`none`, internal, bridge), licence path, open-files limit | no effect |
+| Time in the dynamic loader (`LD_DEBUG=statistics`) | milliseconds; not the cause |
+| CPU split | ~29 s user, ~7 s system: ISE's own start-up code |
+| Same binary under QEMU (user-mode, chroot) | 73 s, so Rosetta is the faster emulator |
+| `bin/lin64/<tool>` wrapper | did the same ~35 s of start-up work again before running `unwrapped/<tool>`, and otherwise only prepends paths that are already set |
+
+**Fix applied:** the entrypoint puts `unwrapped/` first on `PATH`, which
+halves the time (70 s → 35 s per tool). The blinky flow now reaches `map` in
+under 2 minutes; a full build should take about 4 minutes. The remaining
+35 s is ISE's own initialisation under emulation.
