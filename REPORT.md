@@ -226,6 +226,10 @@ wrong".
       to phone home, and WebTalk just fails quietly.
 
 **Exit:** `blinky_xst.bit` produced, with timing met in the `trce` report.
+*(2026-09-28: done. `examples/blinky/build/top.bit`, all constraints met,
+loaded with `make prog`. Timing: ~35 s start-up per tool under Rosetta, 237 s
+for the whole flow. QEMU wasn't timed for the full flow; its start-up alone is
+73 s per tool. See [docs/ise-container.md](docs/ise-container.md).)*
 
 ### Phase 4: Host wrapper `bin/ise` (about 1 h)
 A small POSIX shell script. No new dependencies.

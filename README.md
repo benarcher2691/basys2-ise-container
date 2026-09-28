@@ -23,9 +23,9 @@ Developing for a **Digilent Basys-2 (Spartan-3E XC3S100E)** from an
 ## Status
 
 - ISE container `ise:14.7-full` is built (from AMD's ISE 14.7 VM download)
-  and runs through `bin/ise`. `examples/blinky` synthesises; `map` onwards
-  needs the free WebPACK licence for host ID `0242AC15E301`. Steps are in
-  [docs/ise-container.md](docs/ise-container.md#4-licence-needed-for-map-par-bitgen).
+  and runs through `bin/ise`, with the WebPACK licence mounted from
+  `~/.config/xilinx/`. **End to end works (2026-09-28):**
+  `make -C examples/blinky` (about 4 min) then `make -C examples/blinky prog`.
 - Programming works (2026-09-28): `bin/basys2 prog file.bit` loads the
   Basys-2 FPGA from macOS over its own USB. No adapter or VM is needed.
   `bin/basys2 detect` lists the board and its JTAG chain.

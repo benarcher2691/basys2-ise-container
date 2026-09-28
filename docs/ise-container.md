@@ -11,8 +11,8 @@ REPORT.md Phases 1–2, made concrete. Files: `docker/`.
 | 1. ISE files: extracted from AMD's ISE 14.7 VM download | ✅ `ise-14.7-ISE_DS.tar`, 12.3 GB |
 | 2. Build `ise:14.7-full` | ✅ 4.5 GB image, ~6 min build |
 | 3. Smoke test | ✅ all six tools start, ~35 s each (see §5) |
-| 4. Licence | ⛔ **needed**: `xst` and `ngdbuild` run without one, `map` refuses. **Ben:** get it (steps below) |
-| Blinky (`examples/blinky`) | ✅ synthesised (16 slices) and translated; stops at `map` until the licence is in place |
+| 4. Licence | ✅ WebPACK licence in `~/.config/xilinx/Xilinx.lic` (feature `ISE_WebPACK`, `HOSTID=ANY`, permanent) |
+| Blinky (`examples/blinky`) | ✅ **full flow in 237 s**: 15 slices, all constraints met (min period 4.5 ns, 220 MHz). Loaded on the board with `make prog`: DONE |
 
 ## 1. Get the ISE files
 
@@ -66,6 +66,12 @@ This runs `xst`, `ngdbuild`, `map`, `par`, `trce` and `bitgen` with `-h`,
 with `--network none`. Each should print `ok`.
 
 ## 4. Licence (needed for map, par, bitgen)
+
+> **Done 2026-09-28.** AMD issued an `ISE_WebPACK` licence with
+> **`HOSTID=ANY`**, so it isn't tied to a MAC after all, and ISE 14.7 accepts
+> that feature name. `bin/ise` still uses the internal network and fixed MAC.
+> That does no harm (still no route out) and keeps the option of a
+> node-locked licence open.
 
 Tried 2026-09-28 with no licence: `xst` and `ngdbuild` run fine, then `map`
 stops with `ERROR:Security:9c - No 'ISE' nor 'WebPack' feature version
