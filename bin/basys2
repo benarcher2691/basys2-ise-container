@@ -2,6 +2,8 @@
 # Program the Basys-2 over its on-board USB, natively on macOS.
 # Usage: bin/basys2 detect          list the board and its JTAG chain
 #        bin/basys2 prog top.bit    load a bitfile into the FPGA (volatile)
+#        bin/basys2 svf file.svf    play an SVF file (e.g. from iMPACT)
+#        bin/basys2 reload          FPGA reloads from the flash (JP3 on ROM)
 # Needs Homebrew libusb and python3. Sets up .venv/ on first run.
 set -eu
 
@@ -21,6 +23,11 @@ case "${1:-}" in
         [ $# -eq 2 ] || { echo "usage: $0 prog <file.bit>" >&2; exit 2; }
         bit=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
         exec "$venv/bin/python" "$tool/basys2_prog.py" "$bit" ;;
+    svf)
+        [ $# -eq 2 ] || { echo "usage: $0 svf <file.svf>" >&2; exit 2; }
+        exec "$venv/bin/python" "$tool/svf_play.py" "$2" ;;
+    reload)
+        exec "$venv/bin/python" "$tool/reload.py" ;;
     *)
-        echo "usage: $0 detect | prog <file.bit>" >&2; exit 2 ;;
+        echo "usage: $0 detect | prog <file.bit> | svf <file.svf> | reload" >&2; exit 2 ;;
 esac

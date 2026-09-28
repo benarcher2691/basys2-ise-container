@@ -26,6 +26,10 @@ Developing for a **Digilent Basys-2 (Spartan-3E XC3S100E)** from an
   and runs through `bin/ise`, with the WebPACK licence mounted from
   `~/.config/xilinx/`. **End to end works (2026-09-28):**
   `make -C examples/blinky` (about 4 min) then `make -C examples/blinky prog`.
+- `make flash` writes a design to the board's flash so it survives
+  power-off; `make -C boards/basys2 factory` puts the factory demo back
+  (see [docs/programming-options.md](docs/programming-options.md#writing-the-flash-xcf02s-added-2026-09-28)).
+- Ben's 2013 VHDL builds unchanged: `legacy/kronometer5` (stopwatch).
 - Programming works (2026-09-28): `bin/basys2 prog file.bit` loads the
   Basys-2 FPGA from macOS over its own USB. No adapter or VM is needed.
   `bin/basys2 detect` lists the board and its JTAG chain.

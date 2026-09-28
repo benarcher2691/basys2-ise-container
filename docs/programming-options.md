@@ -131,3 +131,31 @@ open firmware (e.g. a LUFA-based JTAG or XVC bridge).
 3. **Drop C and D.** The FT4232H module isn't needed for this board.
 4. REPORT.md §8 needs rewriting either way: option A (JTAG header) and
    option B (FX2) are both based on wrong assumptions about the board.
+
+## Writing the flash (XCF02S), added 2026-09-28
+
+adepttool can't write the flash itself, so the Xilinx algorithm comes from
+**iMPACT** (in the ISE container) as an SVF file. A small SVF player added
+to our adepttool copy plays it over the board's USB:
+
+```sh
+make -C legacy/kronometer5 flash   # any project using mk/ise.mk
+make -C boards/basys2 factory      # put Digilent's factory demo back
+bin/basys2 reload                  # FPGA reloads from flash (like a power cycle)
+```
+
+`make flash` runs these steps:
+1. `bitgen` with `StartUpClk:CClk`
+2. `promgen -x xcf02s` to make the `.mcs` image
+3. `impact -batch` with `program -p 2 -e -v` (erase, program, verify) into an SVF
+4. `bin/basys2 svf` to play it (about 33 s at 1 MHz)
+5. `bin/basys2 reload`
+
+Tested on the board, 2026-09-28:
+
+| Test | Result |
+|---|---|
+| Verify-only SVF of Digilent's `basys2_100userdemoCClk.bit` against the flash as delivered | ✅ 260 checks: **the factory flash holds exactly that file**, so `make factory` restores it |
+| Verify-only SVF of kronometer5 against that flash (negative test) | ✅ fails as it should (56 of 8192 bits differ in the first block) |
+| `make flash` of kronometer5 | ✅ erase, program and verify: 259 checks, 33 s; `reload` → DONE |
+| `make factory`, then the verify from the first row again | ✅ factory contents back |

@@ -17,6 +17,17 @@ Basys-2 from macOS. See [docs/programming-options.md](../../docs/programming-opt
 3. `requirements.txt`: `libusb1>=3.0` instead of the pinned `1.6.6`.
    Tested with python-libusb1 3.4.0 on Python 3.14.
 
+## Local additions
+
+- `adepttool/svf.py`, `svf_play.py`: a small SVF player (TRST, STATE,
+  ENDIR/ENDDR, FREQUENCY, HIR/TIR/HDR/TDR, SIR/SDR with TDO/MASK checks,
+  RUNTEST). It plays the SVF files iMPACT writes, e.g. to program the
+  XCF02S flash.
+- `reload.py`: JPROGRAM, then poll DONE while in BYPASS, so the FPGA
+  reloads from the flash (JP3 on ROM).
+  Note: upstream `get_status()` re-shifts the current instruction, so
+  polling right after `jprogram()` keeps re-issuing JPROGRAM.
+
 Not copied: `50-digilent.rules` (a Linux udev rule; macOS needs no rules or
 drivers).
 

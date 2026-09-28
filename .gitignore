@@ -22,5 +22,8 @@ data/
 .venv/
 __pycache__/
 
-# Example build outputs
-examples/*/build/
+# Build outputs of every project (mk/ise.mk, boards/*/Makefile)
+build/
+
+# Scratch for flash tests
+.flash-test/
