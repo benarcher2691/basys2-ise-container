@@ -51,9 +51,13 @@ run_all() {   # $1 = result dir; uses ISE_IMAGE / ISE_EXEC from the environment
         done
         rm -rf bad.prj bad_vhdl.prj bad.xst bad.syr bad.ngc bad.lso xst _xmsgs *.xrpt)
     echo "== tools start"
-    "$root/bin/ise" bash -c 'for t in xst ngdbuild map par trce bitgen promgen impact; do
-        $t -h 2>&1 | grep -m1 -E "Release 14.7|iMPACT" >/dev/null || { echo "FAIL $t"; exit 1; }; done' \
-        > "$dest/tools.log" 2>&1 || { cat "$dest/tools.log"; exit 1; }
+    # In a scratch dir: the tools leave _xmsgs/ and logs wherever they run.
+    scratch=$root/tests/.tools-run
+    rm -rf "$scratch" && mkdir -p "$scratch"
+    (cd "$scratch" && "$root/bin/ise" bash -c 'for t in xst ngdbuild map par trce bitgen promgen impact; do
+        $t -h 2>&1 | grep -m1 -E "Release 14.7|iMPACT" >/dev/null || { echo "FAIL $t"; exit 1; }; done') \
+        > "$dest/tools.log" 2>&1 || { cat "$dest/tools.log"; rm -rf "$scratch"; exit 1; }
+    rm -rf "$scratch"
 }
 
 strip_header() {   # bitstream from the sync word AA995566 on
