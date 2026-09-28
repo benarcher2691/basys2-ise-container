@@ -15,6 +15,7 @@ Developing for a **Digilent Basys-2 (Spartan-3E XC3S100E)** from an
 | [REPORT.md](REPORT.md) | The plan: architecture, phases, risks, programming options |
 | [docs/jtag-ft4232h-basys2.md](docs/jtag-ft4232h-basys2.md) | Step by step: FT4232H Mini Module as a JTAG adapter for the Basys-2 (wiring, checks, troubleshooting) |
 | [docs/basys2-board.md](docs/basys2-board.md) | Ben's Basys-2 (Rev D): photos, jumpers, power and voltage checks, and the missing FPGA JTAG header |
+| [docs/programming-options.md](docs/programming-options.md) | Decision input: how to program the Rev D board from macOS (adepttool, djtgcfg in a VM, soldered JTAG, new USB firmware) |
 | [docs/data-inventory.md](docs/data-inventory.md) | What's in the gitignored `data/`: old 2013–2015 Basys-2 VHDL projects, bitfiles, reference PDFs |
 
 ## Status
