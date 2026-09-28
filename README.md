@@ -3,8 +3,9 @@
 Developing for a **Digilent Basys-2 (Spartan-3E XC3S100E)** from an
 **Apple Silicon Mac**, with no Windows machine:
 
-- Native macOS: yosys and iverilog for synthesis and simulation,
-  openFPGALoader for programming.
+- Native macOS: yosys and iverilog for synthesis and simulation, and
+  `bin/basys2` (open-source adepttool) for programming through the board's
+  own USB.
 - **Xilinx ISE 14.7** back end (ngdbuild/map/par/bitgen) in a `linux/amd64`
   Docker container, run through Rosetta.
 
@@ -21,8 +22,9 @@ Developing for a **Digilent Basys-2 (Spartan-3E XC3S100E)** from an
 ## Status
 
 - Plan written. The ISE container isn't built yet.
-- JTAG adapter: the module is powered and works from macOS. Wiring to the
-  Basys-2 is next.
+- Programming works (2026-09-28): `bin/basys2 prog file.bit` loads the
+  Basys-2 FPGA from macOS over its own USB. No adapter or VM is needed.
+  `bin/basys2 detect` lists the board and its JTAG chain.
 
 The ISE installer and license files are AMD's and are never committed (see
 `.gitignore`).

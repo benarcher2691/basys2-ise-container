@@ -17,3 +17,7 @@ xlnx_auto_0_xdb/
 
 # Old VHDL archives and their extracted contents (see docs/data-inventory.md)
 data/
+
+# Python venv for bin/basys2 (tools/adepttool)
+.venv/
+__pycache__/

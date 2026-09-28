@@ -1,6 +1,9 @@
 # Basys-2 on the M2 MacBook Air: running Xilinx ISE 14.7 in a container
 
-**Status:** plan only. Nothing in this document has been run yet.
+**Status:** plan. **Update 2026-09-28:** the programming parts (§1 point 1,
+§8) assumed a JTAG header and a Cypress FX2 USB chip. Ben's Basys-2 (Rev D)
+has neither. It's now programmed natively from macOS through its own USB with
+`bin/basys2` (adepttool); see [docs/programming-options.md](docs/programming-options.md).
 **Date:** 2026-09-26
 **Target machine:** `m2.local`, Apple M2, 24 GB RAM, macOS 27.0
 **Target board:** Digilent Basys-2 (Spartan-3E **XC3S100E**, CP132 package)
@@ -35,7 +38,7 @@ macOS 27 / M2 (native arm64)
 ├── gtkwave               waveforms
 ├── make                  orchestration
 ├── bin/ise               thin wrapper → docker run
-├── openFPGALoader        programming over FTDI JTAG  (already installed)
+├── bin/basys2            programming over the board's own USB (adepttool)
 │
 └── Docker Desktop (already installed; Linux arm64 VM)
      └── linux/amd64 container, run through Rosetta (QEMU as fallback)
@@ -366,6 +369,11 @@ basys2-ise-container/
 ---
 
 ## 8. Programming the board from macOS
+
+> **Superseded (2026-09-28).** Ben's board is Rev D: it has no FPGA JTAG
+> header, and its USB chip is an Atmel AT90USB, not an FX2. Options A and B
+> below don't apply as written. What's used instead is in
+> [docs/programming-options.md](docs/programming-options.md).
 
 The container can't do this (no USB passthrough), so it happens natively.
 Options, best first:

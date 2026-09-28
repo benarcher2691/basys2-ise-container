@@ -1,5 +1,10 @@
 # JTAG: FT4232H Mini Module → Basys-2, step by step
 
+> **Not used for Ben's Basys-2 (decided 2026-09-28).** The Rev D board has no
+> FPGA JTAG header, so it's programmed through its own USB with `bin/basys2`
+> instead (see [programming-options.md](programming-options.md)). Steps 1–3
+> stay as a record of the working FT4232H setup.
+
 How to use an **FTDI FT4232H Mini Module (PCB Rev 1.1, ©2010 FTDI Ltd,
 mini-B USB)** as a JTAG adapter for the **Digilent Basys-2 (XC3S100E)** from
 macOS, with openFPGALoader. No drivers or `sudo` needed.

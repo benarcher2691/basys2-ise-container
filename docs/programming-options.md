@@ -2,6 +2,14 @@
 
 Decision input, written 2026-09-28. Background: [basys2-board.md](basys2-board.md).
 
+> **Decision (2026-09-28): option A.** adepttool is vendored in
+> `tools/adepttool/` (with the macOS patch) and run through `bin/basys2`:
+>
+> ```sh
+> bin/basys2 detect          # board and JTAG chain
+> bin/basys2 prog top.bit    # load a bitfile into the FPGA (volatile)
+> ```
+
 ## Starting point
 
 - The board's only programming path is its **on-board USB**. There's an
@@ -37,8 +45,9 @@ Homebrew libusb, no `sudo`, no drivers):
 | Find the device, read its name, serial and firmware version | ✅ `Digilent Basys2-100`, SN `210155444658` (matches the `D444658` sticker on the back), FW `0116` |
 | Bulk transfers | ❌ at first (`LIBUSB_ERROR_NOT_FOUND`), ✅ after a **one-line patch**: `claimInterface(0)` after opening the device. macOS libusb requires this; Linux doesn't. |
 | Open the JTAG port | ✅ port 0, 4 MHz |
-| Read the chip IDs | ⏳ got `ffffffff` (TDO stuck high). Most likely SW8 was off, so the FPGA side was unpowered. **Retest with SW8 on.** |
-| Load a bitfile | not tried yet |
+| Read the chip IDs | ✅ `d5045093` **xcf02s** and `11c10093` **xc3s100e**, with SW8 on. (With SW8 off it reads `ffffffff`, because the FPGA side is unpowered.) |
+| Load a JtagClk bitfile (Digilent `basys2_100userdemoJtagClk.bit`) | ✅ DONE in 0.67 s |
+| Load a CClk bitfile (Ben's 2014 `Switches_LEDs_Module_4/switches_leds.bit`) | ✅ DONE. So bitfiles built with ISE's default startup clock also load over JTAG |
 
 - ✅ Native on macOS, with no VM or container. Fits the "no Windows, minimal
   layers" goal of the project.
@@ -104,11 +113,11 @@ open firmware (e.g. a LUFA-based JTAG or XVC bridge).
 | Runs natively on the Mac | ✅ | ❌ (VM) | ✅ | ✅ |
 | Board modification | none | none | solder wires | header + reflash |
 | Reversible | ✅ | ✅ | mostly | ❌ |
-| Load FPGA over JTAG | ✅ (after SW8 retest) | ✅ | ✅ | ✅ (after writing it) |
+| Load FPGA over JTAG | ✅ tested | ✅ | ✅ | ✅ (after writing it) |
 | Write the XCF02S flash | ❌ (could be added) | ✅ | ✅ (openFPGALoader) | depends |
 | Open source | ✅ MIT | ❌ | ✅ | ✅ |
 | Effort to first bitfile | ~1 h | ~2–3 h | ~half a day + risk | days |
-| Status | partly tested today | not tried | not tried | not tried |
+| Status | **chosen, working** | fallback | dropped | dropped |
 
 ## Recommendation
 

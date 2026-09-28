@@ -94,7 +94,11 @@ JA–JD (PMOD), JP3 and JP4.
   reset (J4 pin 1, ISP-RESET).
 
 So step 4 of [jtag-ft4232h-basys2.md](jtag-ft4232h-basys2.md) (wiring to "the
-6-pin JTAG header") doesn't work on this board as written. The options:
+6-pin JTAG header") doesn't work on this board as written.
+
+**Decided 2026-09-28:** program through the on-board USB with adepttool
+(`bin/basys2`), natively on macOS. See
+[programming-options.md](programming-options.md). The options considered:
 
 1. **Solder wires onto the JTAG lines.** Solder TMS, TCK, TDI and TDO onto
    pads or vias, and hold the USB chip in reset. This works, but it means
