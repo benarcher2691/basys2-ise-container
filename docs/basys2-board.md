@@ -24,7 +24,7 @@ Photos taken 2026-09-28. Pin and net names come from the **Rev D** schematic
 |---|---|---|
 | **SW8 POWER** | slide switch, OFF/ON | Doesn't switch the power itself. The USB chip reads it and turns the 3.3 V regulator on or off (the `USB-ON` net). |
 | **JP4** clock select | **No jumper fitted** (3 empty holes) | The LTC6905's divider pin is left open, so it divides by 2: **MCLK = 50 MHz**. A jumper toward `100MHz` gives 100 MHz; toward `25MHz` gives 25 MHz. The manual says a jumper has to be soldered in. |
-| **JP3** PC/ROM | Blue jumper fitted | `ROM` means the FPGA loads the design stored in the XCF02S at power-up. `PC` means it waits to be loaded over JTAG. Loading over JTAG works in either position. *Which position it's in can't be told from the photo; check on the board.* |
+| **JP3** PC/ROM | Blue jumper on **ROM** (checked on the board 2026-09-28) | `ROM` means the FPGA loads the design stored in the XCF02S at power-up. `PC` means it waits to be loaded over JTAG. Loading over JTAG works in either position. |
 
 ## Power
 
