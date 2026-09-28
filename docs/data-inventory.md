@@ -130,7 +130,8 @@ Good candidates for trying out the ISE container with XST:
 | Path | What |
 |---|---|
 | `basys2/manual/Basys2_rm.pdf` | Basys-2 reference manual |
-| `basys2/schematic/Basys2_sch.pdf` | Basys-2 schematic |
+| `basys2/schematic/Basys2_sch.pdf` | Basys-2 schematic, **Rev C** (2008) |
+| `../../../Basys2_sch_revD.pdf` (i.e. `data/Basys2_sch_revD.pdf`) | Basys-2 schematic, **Rev D** (2009, matches Ben's board). Fetched 2026-09-28 from the [Wayback copy](https://web.archive.org/web/20240504021658/https://digilent.com/reference/_media/programmable-logic/basys-2/basys2_schd.pdf) of Digilent's `basys2_schd.pdf` |
 | `basys2/src/VGA RefComp/` | Digilent VGA reference component |
 | `Xilinx/Spartan 3E/ds312 (data sheet).pdf` | Spartan-3E data sheet |
 | `Xilinx/Spartan 3E/ug331 (user guide).pdf`, `ug332 (configuration user guide).pdf` | Spartan-3E user and configuration guides |

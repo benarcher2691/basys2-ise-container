@@ -17,7 +17,7 @@ tables 3.1 and 3.2 and §3.
 | 1 | Power jumper, CN3-1 ↔ CN3-3 | ✅ done 2026-09-26 |
 | 2 | I/O power wire, CN2-5 → CN2-11 | ✅ done 2026-09-26 |
 | 3 | Module check on the Mac | ✅ passed 2026-09-26 |
-| 4 | JTAG wiring to the Basys-2 | ⬜ to do |
+| 4 | JTAG wiring to the Basys-2 | ⛔ blocked: no JTAG header on Rev D ([details](basys2-board.md#-theres-no-fpga-jtag-header)) |
 | 5 | Chain detect (XC3S100E + XCF02S), record the IDCODE | ⬜ to do |
 | 6 | Patch openFPGALoader for the XC3S100E, load a blinky | ⬜ to do |
 
@@ -122,6 +122,11 @@ openFPGALoader -c ft4232 --detect; echo "exit=$?"
   finds no devices, and gives **`exit=0`**. No `sudo` needed.
 
 ## Step 4: JTAG wiring to the Basys-2
+
+> ⚠️ **Blocked (2026-09-28):** Ben's Basys-2 is Rev D, and it has **no FPGA
+> JTAG header**. The only 6-pin header, J4, is the USB chip's programming
+> header and has no TMS. See [basys2-board.md](basys2-board.md#-theres-no-fpga-jtag-header)
+> for the options.
 
 Unplug the module and leave the Basys-2 unpowered. Use the **labels printed
 on the Basys-2** next to its 6-pin JTAG header. Don't assume a pin order.
