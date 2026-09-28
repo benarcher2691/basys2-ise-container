@@ -273,6 +273,13 @@ same bitstream.
 
 **Exit:** `top.bit` from the yosys path works on the board, or a documented
 decision to use XST.
+*(2026-09-28: done for the blinky. `make SYNTH=yosys` in any `mk/ise.mk`
+project runs `synth_xilinx -family xc3se -ise -edif` natively (yosys 0.68+)
+and the ISE back end from `ngdbuild`. ngdbuild accepted the EDIF. Result:
+15 slices, the same as XST, constraints met, configures the board. The only
+yosys warning is that shift-register inference isn't supported for xc3se.
+It's Verilog only: the legacy VHDL projects stay on XST, since yosys would
+need GHDL for VHDL.)*
 
 ### Phase 6: Trim to `ise:14.7-s3e` (half a day, optional but satisfying)
 Goal: a few hundred MB, containing only what the Spartan-3E CLI flow touches.
@@ -294,6 +301,11 @@ Goal: a few hundred MB, containing only what the Spartan-3E CLI flow touches.
 
 **Exit:** the slim image passes the regression and `bin/ise` uses it by
 default.
+
+*(2026-09-28: done. `ise:14.7-s3e` is 158 MB, and `tests/regress.sh`
+passes against the full image: 4 bitstreams, the PROM image and the XST
+error paths are identical. The files were found with inotify, not strace
+(no ptrace under Rosetta). See [docs/ise-container.md](docs/ise-container.md#6-slim-image-ise147-s3e-phase-6).)*
 
 ### Phase 7: Makefile and project template (1–2 h)
 ```make

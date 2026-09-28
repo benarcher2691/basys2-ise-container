@@ -28,7 +28,13 @@ lic=$HOME/.config/xilinx/Xilinx.lic
 docker network inspect "$net" >/dev/null 2>&1 ||
     docker network create --internal "$net" >/dev/null
 
-set -- -v "$root":/work -w "/work$rel" "${ISE_IMAGE:-ise:14.7-full}" "$@"
+# Default: the trimmed image (Phase 6), else the full one.
+image=${ISE_IMAGE:-ise:14.7-s3e}
+if [ -z "${ISE_IMAGE:-}" ] && ! docker image inspect "$image" >/dev/null 2>&1; then
+    image=ise:14.7-full
+fi
+
+set -- -v "$root":/work -w "/work$rel" "$image" "$@"
 [ -f "$lic" ] && set -- -v "$lic":/root/.Xilinx/Xilinx.lic:ro "$@"
 
 exec docker run --rm --platform linux/amd64 \

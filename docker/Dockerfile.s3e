@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+#
+# ise:14.7-s3e: ise:14.7-full trimmed to the files the Spartan-3E flows in
+# tests/regress.sh actually open (docker/keep-list.txt, recorded by
+# docker/trace-files.sh). Build with docker/build.sh s3e, then check with
+# tests/regress.sh compare (bitstreams must match the full image's).
+
+FROM ise:14.7-full AS full
+COPY keep-list.txt /tmp/keep-list.txt
+# Listed paths without recursion (an opened directory must not pull in its
+# whole tree), plus every symlink (tiny, and targets are resolved at run time),
+# plus the bin/lin64/<tool> wrapper of every kept unwrapped/<tool>: bitgen
+# checks that $XILINX/bin/lin64/wbtc exists (a stat, which inotify can't see)
+# before running WebTalk's client.
+RUN { grep -v '^#' /tmp/keep-list.txt; find /opt/Xilinx -type l; \
+      grep '/bin/lin64/unwrapped/' /tmp/keep-list.txt | sed 's|/unwrapped/|/|'; \
+    } | sort -u > /tmp/files \
+ && tar -cf /tmp/slim.tar --no-recursion -T /tmp/files
+
+FROM --platform=linux/amd64 ubuntu:14.04@sha256:881afbae521c910f764f7187dbfbca3cc10c26f8bafa458c76dda009a901c29d
+ENV DEBIAN_FRONTEND=noninteractive
+# Same libraries as Dockerfile.full (the layer is shared from the cache).
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      libncurses5 libstdc++5 \
+      libglib2.0-0 libsm6 libxi6 libxrender1 libxrandr2 \
+      libfreetype6 libfontconfig1 libxtst6 \
+ && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=bind,from=full,source=/tmp/slim.tar,target=/tmp/slim.tar \
+    tar -xf /tmp/slim.tar -C /
+RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib64/ld-lsb-x86-64.so.3
+COPY entrypoint.sh /usr/local/bin/ise-entrypoint
+WORKDIR /work
+ENTRYPOINT ["/usr/local/bin/ise-entrypoint"]
+CMD ["bash"]

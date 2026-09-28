@@ -6,7 +6,9 @@
 #                              build everything with both images and check the
 #                              bitstreams are identical (header, which holds the
 #                              build date, excluded) and the error paths match.
-#                              Defaults: ise:14.7-full ise:14.7-s3e
+#                              Defaults: ise:14.7-full ise:14.7-s3e.
+#                              imageA "trace" reuses the last trace run's
+#                              results (made with ise:14.7-full).
 set -eu
 
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -47,7 +49,7 @@ run_all() {   # $1 = result dir; uses ISE_IMAGE / ISE_EXEC from the environment
             grep -E '^ERROR' bad.syr | sed 's/"[^"]*"//g' > "$dest/errors-$f.txt"
             [ -s "$dest/errors-$f.txt" ] || { echo "FAIL: no XST error for $f"; exit 1; }
         done
-        rm -rf bad.prj bad.xst bad.syr bad.ngc bad.lso xst _xmsgs *.xrpt)
+        rm -rf bad.prj bad_vhdl.prj bad.xst bad.syr bad.ngc bad.lso xst _xmsgs *.xrpt)
     echo "== tools start"
     "$root/bin/ise" bash -c 'for t in xst ngdbuild map par trce bitgen promgen impact; do
         $t -h 2>&1 | grep -m1 -E "Release 14.7|iMPACT" >/dev/null || { echo "FAIL $t"; exit 1; }; done' \
@@ -63,8 +65,12 @@ case $mode in
         run_all "$out/trace" ;;
     compare)
         a=${2:-ise:14.7-full}; b=${3:-ise:14.7-s3e}
-        rm -rf "$out/a" "$out/b"
-        echo "### $a"; ISE_IMAGE=$a run_all "$out/a"
+        rm -rf "$out/b"
+        if [ "$a" = trace ]; then   # reuse the results of the last trace run
+            rm -rf "$out/a"; cp -R "$out/trace" "$out/a"
+        else
+            rm -rf "$out/a"; echo "### $a"; ISE_IMAGE=$a run_all "$out/a"
+        fi
         echo "### $b"; ISE_IMAGE=$b run_all "$out/b"
         fail=0
         for f in "$out"/a/*.bit; do

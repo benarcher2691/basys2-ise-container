@@ -110,6 +110,15 @@ Test tooling in `vhdl-zip/vhdl/projects2014/tests/`:
   tools: `06 assembler/Assembler.py`, `08 vm translator/VMtranslator.py`,
   `10/JackAnalyzer.py` and `11 compiler/JackCompiler.py`
 
+## Copied into the repo (2026-09-28)
+
+These build unchanged with the container flow (`mk/ise.mk`):
+
+| Repo folder | From |
+|---|---|
+| `legacy/kronometer5/` | `vhdl-2013-rar/vhdl archive 2013 apr 16/kronometer5` (6 VHDL files + `pins.ucf`) |
+| `legacy/nand2tetris/` | `vhdl-zip/vhdl/projects/nand2tetris/src/nand2tetris` (12 VHDL files, `pins.ucf`, `ipcore_dir/*.ngc`) and `projects2014/tests/tests/test001.asm` |
+
 ## Smaller projects (`vhdl-2013-rar/vhdl archive 2013 apr 16/`, unless noted)
 
 Good candidates for trying out the ISE container with XST:

@@ -12,6 +12,7 @@ REPORT.md Phases 1–2, made concrete. Files: `docker/`.
 | 2. Build `ise:14.7-full` | ✅ 4.5 GB image, ~6 min build |
 | 3. Smoke test | ✅ all six tools start, ~35 s each (see §5) |
 | 4. Licence | ✅ WebPACK licence in `~/.config/xilinx/Xilinx.lic` (feature `ISE_WebPACK`, `HOSTID=ANY`, permanent) |
+| 6. Slim image `ise:14.7-s3e` | ✅ **158 MB** (full: 17.3 GB); bit-identical results in `tests/regress.sh`; `bin/ise` uses it by default |
 | Blinky (`examples/blinky`) | ✅ **full flow in 237 s**: 15 slices, all constraints met (min period 4.5 ns, 220 MHz). Loaded on the board with `make prog`: DONE |
 
 ## 1. Get the ISE files
@@ -123,3 +124,36 @@ What was tested (2026-09-28):
 halves the time (70 s → 35 s per tool). The blinky flow now reaches `map` in
 under 2 minutes; a full build should take about 4 minutes. The remaining
 35 s is ISE's own initialisation under emulation.
+
+## 6. Slim image `ise:14.7-s3e` (Phase 6)
+
+```sh
+docker/trace-files.sh                          # record the files the flows open → docker/keep-list.txt (~28 min)
+docker/build.sh s3e                            # ise:14.7-s3e from ise:14.7-full + keep-list.txt (~10 s)
+tests/regress.sh compare trace ise:14.7-s3e    # rebuild everything with it and compare (~28 min)
+```
+
+- **How the files were found:** `strace` doesn't work under Rosetta (no
+  ptrace). So a native arm64 container watches the ISE container's
+  `/opt/Xilinx` with **inotify** (through `/proc/<pid>/root`), while
+  `tests/regress.sh trace` runs every flow in that container (`bin/ise` with
+  `ISE_EXEC`).
+- **What the flows cover:**
+  - blinky with XST and with yosys
+  - kronometer5 (VHDL)
+  - nand2tetris (VHDL plus IP-core netlists)
+  - the flash chain (`bitgen` CClk, `promgen`, iMPACT SVF)
+  - XST syntax errors in Verilog and VHDL
+  - `-h` for every tool
+- **Result (2026-09-28):** 1,336 paths, 234 MB unpacked, **158 MB image**.
+  The four bitstreams match the full image's bit for bit (header with the
+  build date excluded), and so do the PROM image and the XST error messages.
+- **One gap the trace can't see:** bitgen checks that the `bin/lin64/wbtc`
+  wrapper *exists* (a `stat`, invisible to inotify) before starting
+  WebTalk. `Dockerfile.s3e` therefore keeps the wrapper of every kept
+  `unwrapped/` tool.
+- **If a new design needs something that isn't in the image** (e.g. another
+  kind of IP core, or a tool not used yet): run it with
+  `ISE_IMAGE=ise:14.7-full`, add it to `tests/regress.sh`, then re-run the
+  trace and the rebuild. The full image stays the reference.
+- **Start-up time is unchanged** (~35 s per tool). It's CPU, not file access.
