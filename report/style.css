@@ -1,0 +1,42 @@
+/* Web page style for the report (report/build.sh). */
+:root {
+  --text: #1d1d1f; --muted: #5a5a60; --bg: #ffffff; --accent: #1f5fa8;
+  --code-bg: #f4f5f7; --border: #dcdde1; --note-bg: #eef4fb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #e6e6e8; --muted: #a0a0a8; --bg: #16171a; --accent: #7cb2f0;
+    --code-bg: #212328; --border: #34363c; --note-bg: #1c2633;
+  }
+}
+html { background: var(--bg); }
+body {
+  color: var(--text); background: var(--bg);
+  font: 17px/1.6 Charter, "Bitstream Charter", Georgia, serif;
+  max-width: 46rem; margin: 0 auto; padding: 2rem 1rem 4rem;
+}
+h1, h2, h3, h4 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.25; }
+h1 { font-size: 1.9rem; margin-top: 3rem; border-bottom: 2px solid var(--border); padding-bottom: .3rem; }
+h2 { font-size: 1.4rem; margin-top: 2.2rem; }
+h3 { font-size: 1.15rem; margin-top: 1.6rem; }
+header#title-block-header { text-align: center; margin-bottom: 2.5rem; }
+header#title-block-header h1 { border: none; font-size: 2.2rem; margin-bottom: .2rem; }
+.subtitle { color: var(--muted); font-size: 1.15rem; margin-top: 0; }
+.author, .date { color: var(--muted); margin: .2rem 0; }
+a { color: var(--accent); }
+code, pre { font-family: Menlo, "SF Mono", Consolas, monospace; font-size: .86em; }
+code { background: var(--code-bg); padding: .1em .3em; border-radius: 3px; }
+pre { background: var(--code-bg); padding: .8rem 1rem; border-radius: 6px; overflow-x: auto; line-height: 1.35; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; margin: 1rem 0; font-size: .92em; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--border); padding: .35rem .6rem; text-align: left; vertical-align: top; }
+th { background: var(--code-bg); }
+blockquote {
+  margin: 1.2rem 0; padding: .6rem 1rem; background: var(--note-bg);
+  border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0;
+}
+blockquote p { margin: .4rem 0; }
+nav#TOC { border: 1px solid var(--border); border-radius: 6px; padding: .5rem 1.2rem; margin-bottom: 2rem; }
+nav#TOC ul { padding-left: 1.2rem; }
+nav#TOC > ul { padding-left: .4rem; list-style: none; }
+.header-section-number { color: var(--muted); margin-right: .4rem; }

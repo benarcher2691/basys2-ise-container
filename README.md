@@ -20,6 +20,14 @@ Developing for a **Digilent Basys-2 (Spartan-3E XC3S100E)** from an
 | [docs/programming-options.md](docs/programming-options.md) | Decision input: how to program the Rev D board from macOS (adepttool, djtgcfg in a VM, soldered JTAG, new USB firmware) |
 | [docs/data-inventory.md](docs/data-inventory.md) | What's in the gitignored `data/`: old 2013–2015 Basys-2 VHDL projects, bitfiles, reference PDFs |
 
+## Report
+
+[`report/`](report/) is an educational report for senior high school
+students: the Hack computer, its origin and principles, and (to come) how it
+is built on the FPGA. One Markdown file per chapter in `report/chapters/`;
+`report/build.sh` makes `report/out/report.html` (a single web page) and
+`report/out/report.pdf` (needs `brew install pandoc tectonic`).
+
 ## Everyday use
 
 ```sh

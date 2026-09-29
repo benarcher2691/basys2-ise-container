@@ -1,0 +1,22 @@
+---
+title: "Building a Computer from First Principles"
+subtitle: "The Hack computer on an FPGA: an educational report"
+author: "Ben Archer"
+date: "Draft, September 2026"
+lang: en
+toc: true
+toc-depth: 2
+numbersections: true
+# PDF (LaTeX via tectonic)
+documentclass: report
+papersize: a4
+geometry: "margin=2.5cm"
+fontsize: 11pt
+mainfont: "Charter"
+sansfont: "Helvetica Neue"
+monofont: "Menlo"
+monofontoptions: "Scale=0.85"
+linkcolor: "blue!50!black"
+urlcolor: "blue!50!black"
+colorlinks: true
+---

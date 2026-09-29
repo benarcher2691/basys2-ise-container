@@ -30,3 +30,6 @@ build-yosys/
 # Regression and trace scratch
 .regress/
 .trace/
+
+# Generated report (report/build.sh)
+report/out/
