@@ -310,7 +310,8 @@ Goal: a few hundred MB, containing only what the Spartan-3E CLI flow touches.
 **Exit:** the slim image passes the regression and `bin/ise` uses it by
 default.
 
-*(2026-09-28: done. `ise:14.7-s3e` is 158 MB, and `tests/regress.sh`
+*(2026-09-28: done. `ise:14.7-s3e` is 651 MB on disk (158 MB compressed;
+324 MB of it shared with the full image), and `tests/regress.sh`
 passes against the full image: 4 bitstreams, the PROM image and the XST
 error paths are identical. The files were found with inotify, not strace
 (no ptrace under Rosetta). See [docs/ise-container.md](docs/ise-container.md#6-slim-image-ise147-s3e-phase-6).)*

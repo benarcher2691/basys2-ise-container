@@ -60,7 +60,8 @@ nand2tetris Hack computer: CPU, ROM, RAM), each with testbenches
 - Ben's 2013–15 VHDL builds unchanged: `legacy/kronometer5` (stopwatch) and
   `legacy/nand2tetris` (Hack computer, with block-RAM cores).
 - yosys front end works for Verilog (`SYNTH=yosys`, REPORT.md Phase 5).
-- Slim image `ise:14.7-s3e`: **158 MB** instead of 17 GB, with bit-identical
+- Slim image `ise:14.7-s3e`: **651 MB** on disk (158 MB compressed) instead of
+  17.3 GB, with bit-identical
   results (REPORT.md Phase 6). `bin/ise` uses it by default.
 - Programming works (2026-09-28): `bin/basys2 prog file.bit` loads the
   Basys-2 FPGA from macOS over its own USB. No adapter or VM is needed.

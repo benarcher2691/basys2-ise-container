@@ -12,7 +12,7 @@ REPORT.md Phases 1–2, made concrete. Files: `docker/`.
 | 2. Build `ise:14.7-full` | ✅ 4.5 GB image, ~6 min build |
 | 3. Smoke test | ✅ all six tools start, ~35 s each (see §5) |
 | 4. Licence | ✅ WebPACK licence in `~/.config/xilinx/Xilinx.lic` (feature `ISE_WebPACK`, `HOSTID=ANY`, permanent) |
-| 6. Slim image `ise:14.7-s3e` | ✅ **158 MB** (full: 17.3 GB); bit-identical results in `tests/regress.sh`; `bin/ise` uses it by default |
+| 6. Slim image `ise:14.7-s3e` | ✅ **651 MB** on disk, 158 MB compressed (full: 17.3 GB); bit-identical results in `tests/regress.sh`; `bin/ise` uses it by default |
 | Blinky (`examples/blinky`) | ✅ **full flow in 237 s**: 15 slices, all constraints met (min period 4.5 ns, 220 MHz). Loaded on the board with `make prog`: DONE |
 
 ## 1. Get the ISE files
@@ -146,7 +146,10 @@ tests/regress.sh compare trace ise:14.7-s3e    # rebuild everything with it and 
   - the flash chain (`bitgen` CClk, `promgen`, iMPACT SVF)
   - XST syntax errors in Verilog and VHDL
   - `-h` for every tool
-- **Result (2026-09-28):** 1,336 paths, 234 MB unpacked, **158 MB image**.
+- **Result (2026-09-28):** 1,336 paths, 234 MB unpacked. The image is
+  **651 MB on disk** (Docker's "content size", i.e. compressed: 158 MB).
+  324 MB of that is the Ubuntu base and libraries it shares with the full
+  image, so it adds 328 MB of its own; the ISE files are a 246 MB layer.
   The four bitstreams match the full image's bit for bit (header with the
   build date excluded), and so do the PROM image and the XST error messages.
 - **Refreshed 2026-09-29** for the Verilog projects: 1,338 paths. The two new
