@@ -8,6 +8,7 @@ details.
 |---|---|---|
 | [`kronometer/`](kronometer/) | Stopwatch on the 7-segment display | 64 slices |
 | [`hack/`](hack/) | The Hack computer from nand2tetris: CPU, program ROM, data RAM | 144 slices, 3 block RAMs |
+| [`vga/`](vga/) | Three colour bars on a VGA monitor, 640 x 480 at 60 Hz | 35 slices |
 | [`common/`](common/) | Modules both use: input synchronizer, 7-segment decoder and display driver | – |
 
 The original 2013–15 VHDL versions are in [`../legacy/`](../legacy/).
@@ -92,3 +93,19 @@ make PROGRAM=programs/myprog.hack prog   # assembles, builds (~4 min), loads
 
 The program is part of the bitstream (block RAM contents), so a new program
 means a new ISE build.
+
+## vga
+
+Red, green and blue bars on a VGA monitor (connect one to the board's VGA
+connector), 640 x 480 at 60 Hz. The Verilog version of Ben's 2010 `MyVGA`
+(the original is in `legacy/myvga/`).
+
+Files:
+- `rtl/vga_timing.v`: the reusable part, counting pixels and lines and making
+  the hsync and vsync pulses; the starting point for any VGA picture,
+  including a screen for the Hack computer
+- `rtl/vga_colorbars.v`: the top level: 25 MHz pixel enable, and the colour
+  chosen from the x position
+- `tb/vga_colorbars_tb.v`: simulates two full frames at 50 MHz and checks the
+  line and frame lengths, sync pulses, back porch, bar widths and order, and
+  that everything outside the picture is black

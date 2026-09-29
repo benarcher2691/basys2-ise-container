@@ -117,6 +117,7 @@ These build unchanged with the container flow (`mk/ise.mk`):
 | Repo folder | From |
 |---|---|
 | `legacy/kronometer5/` | `vhdl-2013-rar/vhdl archive 2013 apr 16/kronometer5` (6 VHDL files + `pins.ucf`) |
+| `legacy/myvga/` | `vhdl-zip/vhdl/Xilinx/vga/MyVGA` (`OwnVGA.vhd`, created 2010-09-13, and `pins.ucf`; its clock is on M6, the empty IC6 socket) |
 | `legacy/nand2tetris/` | `vhdl-zip/vhdl/projects/nand2tetris/src/nand2tetris` (12 VHDL files, `pins.ucf`, `ipcore_dir/*.ngc`) and `projects2014/tests/tests/test001.asm` |
 
 ## Smaller projects (`vhdl-2013-rar/vhdl archive 2013 apr 16/`, unless noted)

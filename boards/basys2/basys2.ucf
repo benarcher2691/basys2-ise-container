@@ -47,6 +47,19 @@ NET "seg<5>" LOC = "L13";  # CF
 NET "seg<6>" LOC = "M12";  # CG
 NET "dp"     LOC = "N13";  # DP
 
+# VGA connector: 8-bit colour (3 red, 3 green, 2 blue) through resistor
+# DACs (510 ohm on the top bit, 1k, 2k), and the two sync signals.
+NET "vga_red<0>"   LOC = "C14";   # RED0
+NET "vga_red<1>"   LOC = "D13";   # RED1
+NET "vga_red<2>"   LOC = "F13";   # RED2
+NET "vga_green<0>" LOC = "F14";   # GRN0
+NET "vga_green<1>" LOC = "G13";   # GRN1
+NET "vga_green<2>" LOC = "G14";   # GRN2
+NET "vga_blue<0>"  LOC = "H13";   # BLU1 (the board has no BLU0)
+NET "vga_blue<1>"  LOC = "J13";   # BLU2
+NET "vga_hsync"    LOC = "J14";
+NET "vga_vsync"    LOC = "K13";
+
 # Pmod expansion headers JA..JD: pins 1-4 of each 6-pin header are FPGA
 # I/O (pin 5 GND, pin 6 3.3 V). Each signal has a 200 ohm series resistor
 # and ESD protection on the board. 3.3 V logic only.
