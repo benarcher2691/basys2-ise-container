@@ -46,3 +46,27 @@ NET "seg<4>" LOC = "P12";  # CE
 NET "seg<5>" LOC = "L13";  # CF
 NET "seg<6>" LOC = "M12";  # CG
 NET "dp"     LOC = "N13";  # DP
+
+# Pmod expansion headers JA..JD: pins 1-4 of each 6-pin header are FPGA
+# I/O (pin 5 GND, pin 6 3.3 V). Each signal has a 200 ohm series resistor
+# and ESD protection on the board. 3.3 V logic only.
+# ja<0> = JA pin 1, ..., ja<3> = JA pin 4 (as printed on the board).
+NET "ja<0>" LOC = "B2";
+NET "ja<1>" LOC = "A3";
+NET "ja<2>" LOC = "J3";
+NET "ja<3>" LOC = "B5";
+
+NET "jb<0>" LOC = "C6";
+NET "jb<1>" LOC = "B6";
+NET "jb<2>" LOC = "C5";
+NET "jb<3>" LOC = "B7";
+
+NET "jc<0>" LOC = "A9";
+NET "jc<1>" LOC = "B9";
+NET "jc<2>" LOC = "A10";
+NET "jc<3>" LOC = "C9";
+
+NET "jd<0>" LOC = "C12";
+NET "jd<1>" LOC = "A13";
+NET "jd<2>" LOC = "C13";
+NET "jd<3>" LOC = "D12";
