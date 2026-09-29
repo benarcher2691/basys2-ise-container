@@ -32,8 +32,8 @@ let software turn that description into a configuration for the chip.
   instruction set.
 - How to program Hack in assembly language, and how an assembler turns that
   into the binary machine code the hardware executes.
-- Later chapters: what an FPGA is, how the Hack computer is described in
-  Verilog, and how the tools turn that description into a working chip.
+- What an FPGA is, how the Hack computer is described in Verilog, and how
+  the tools turn that description into a working chip.
 
 ## How the report is organised
 
@@ -43,10 +43,14 @@ let software turn that description into a configuration for the chip.
 | 3 | Bits, numbers and logic: the building blocks |
 | 4 | Inside the Hack computer: architecture and instruction set |
 | 5 | Programming the Hack computer in assembly language |
-| later | FPGAs and the Basys-2 board; Hack in Verilog; from source code to a running chip |
+| 6 | FPGAs and the Basys-2 board |
+| 7 | The Hack computer in Verilog |
+| 8 | From source code to a running chip: the toolchain |
+| 9 | Where to go next: exercises and projects |
 
 Chapters 2 to 5 are about the computer itself and need no special
-equipment. The later chapters are about building it on real hardware.
+equipment. Chapters 6 to 8 are about building it on real hardware, and
+chapter 9 suggests what to try yourself.
 
 ## How to read it
 

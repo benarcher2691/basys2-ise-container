@@ -128,9 +128,14 @@ RAM[17]. Tracing the first rounds of the loop:
 
 The result, 55, is `0x0037` in hexadecimal.
 
-> **On the board.** Build the computer with this program
-> (`make PROGRAM=programs/sum.hack prog` in `projects/hack`), set SW0 up to
-> show address 1, and the display shows `0037`.
+> **On the board.** Build the computer with this program, in
+> `projects/hack`:
+>
+> ```
+> make PROGRAM=programs/sum.hack prog
+> ```
+>
+> Then set SW0 up to show address 1: the display shows `0037`.
 
 > **Try it.** Change `sum.asm` to add the numbers from 1 to 100. What will
 > the display show? (5050 = `0x13BA`.)
