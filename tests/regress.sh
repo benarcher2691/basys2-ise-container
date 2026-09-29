@@ -21,6 +21,9 @@ blinky:examples/blinky:
 blinky-yosys:examples/blinky:SYNTH=yosys
 kronometer5:legacy/kronometer5:
 nand2tetris:legacy/nand2tetris:
+kronometer:projects/kronometer:
+kronometer-yosys:projects/kronometer:SYNTH=yosys
+hack:projects/hack:
 "
 
 run_all() {   # $1 = result dir; uses ISE_IMAGE / ISE_EXEC from the environment

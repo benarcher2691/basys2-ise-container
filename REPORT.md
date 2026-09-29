@@ -280,6 +280,11 @@ and the ISE back end from `ngdbuild`. ngdbuild accepted the EDIF. Result:
 yosys warning is that shift-register inference isn't supported for xc3se.
 It's Verilog only: the legacy VHDL projects stay on XST, since yosys would
 need GHDL for VHDL.)*
+*(2026-09-29: multi-module designs need `-flatten`, and the `$scopeinfo`
+cells that flattening leaves must be deleted before `write_edif`; `mk/ise.mk`
+does both. Block RAMs in 9-bit-wide configurations (`RAMB16_S9_S9`) don't
+get through ngdbuild: yosys writes their 1-bit parity pins as scalars and ISE
+expects `[0:0]` buses. That affects `projects/hack`, which stays on XST.)*
 
 ### Phase 6: Trim to `ise:14.7-s3e` (half a day, optional but satisfying)
 Goal: a few hundred MB, containing only what the Spartan-3E CLI flow touches.

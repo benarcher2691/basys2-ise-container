@@ -5,11 +5,16 @@
 #   SRCS    sources (.v, .vhd), relative to the project directory
 #   UCF     constraints file (default: boards/basys2/basys2.ucf)
 #   CORES   optional directories with CORE Generator netlists (.ngc)
+#   TB      optional testbench(es) for `make sim` (Icarus Verilog)
+#   EXTRA_DEPS  optional files the build needs in the build directory, e.g.
+#           memory images read with $readmemb("name"); the project Makefile
+#           adds a rule that puts them there
 #
 # and then does `include <path>/mk/ise.mk`. Targets:
 #
 #   make          build/$(TOP).bit, StartUpClk:JtagClk, for loading over JTAG
 #                 (SYNTH=yosys: build-yosys/$(TOP).bit, yosys instead of XST)
+#   make sim      compile SRCS + TB with iverilog and run it in the build dir
 #   make prog     load it into the FPGA (bin/basys2 prog, lost at power-off)
 #   make flash    write it to the XCF02S flash so it survives power-off, then
 #                 reload the FPGA from there (needs JP3 on ROM)
@@ -23,6 +28,8 @@ ISE   := $(ROOT)/bin/ise
 PART  ?= xc3s100e-cp132-4
 UCF   ?= $(ROOT)/boards/basys2/basys2.ucf
 CORES ?=
+TB    ?=
+EXTRA_DEPS ?=
 
 # SYNTH=xst (default) or SYNTH=yosys. yosys (Spartan-3E support is
 # EXPERIMENTAL) runs natively and writes EDIF; its outputs go to build-yosys/.
@@ -48,9 +55,25 @@ ctr = $(patsubst $(ROOT)/%,/work/%,$(abspath $(1)))
 all: $(B)/$(TOP).bit
 
 # yosys: native synthesis to EDIF (Verilog only), ISE from ngdbuild on.
-$(B)/$(TOP).edf: $(SRCS) | $(B)
-	yosys -q -l $(B)/yosys.log -p 'read_verilog $(SRCS); synth_xilinx -family xc3se -top $(TOP) -ise -edif $@'
+# Runs in the build dir, like the ISE tools, so $readmemb finds EXTRA_DEPS.
+# -flatten: ISE's edif2ngd wants one flat netlist. Flattening leaves
+# $scopeinfo marker cells behind, which write_edif would emit as references
+# to an undefined cell, so they're deleted before writing
+# (write_edif -pvector bra is what synth_xilinx -edif would run).
+$(B)/$(TOP).edf: $(SRCS) $(EXTRA_DEPS) | $(B)
+	cd $(B) && yosys -q -l yosys.log -p 'read_verilog $(abspath $(SRCS)); synth_xilinx -family xc3se -top $(TOP) -flatten -ise; delete t:$$scopeinfo; write_edif -pvector bra $(TOP).edf'
 	@grep -A30 'Printing statistics' $(B)/yosys.log | grep -E 'cells|FD|LUT|MUXCY|XORCY|BUF|RAM' | head -12 || true
+
+# Simulation with Icarus Verilog, run in the build dir (same file lookup as
+# synthesis). The testbench decides pass/fail and says so.
+# Each testbench in TB is compiled and run on its own.
+sim: $(SRCS) $(TB) $(EXTRA_DEPS) | $(B)
+	@set -e; for tb in $(TB); do \
+	    name=$$(basename $$tb .v); \
+	    echo "== $$name"; \
+	    iverilog -g2005 -Wall -s $$name -o $(B)/$$name.vvp $(abspath $(SRCS)) $$(cd $$(dirname $$tb) && pwd)/$$(basename $$tb); \
+	    (cd $(B) && vvp -n $$name.vvp); \
+	done
 
 $(B)/$(TOP).prj: $(SRCS) | $(B)
 	@for s in $(foreach s,$(SRCS),$(call ctr,$(s))); do \
@@ -62,7 +85,7 @@ $(B)/$(TOP).xst: | $(B)
 	@printf 'run\n-ifn $(TOP).prj\n-ifmt mixed\n-top $(TOP)\n-ofn $(TOP).ngc\n-ofmt NGC\n-p $(PART)\n%s\n' \
 	    "$$(echo '$(XST_OPTS)' | tr ' ' '\n' | paste -d' ' - -)" > $@
 
-$(B)/$(TOP).bit: $(SYNTH_DEPS) $(SRCS) $(UCF)
+$(B)/$(TOP).bit: $(SYNTH_DEPS) $(SRCS) $(UCF) $(EXTRA_DEPS)
 	cd $(B) && $(ISE) bash -euc ' \
 	    $(SYNTH_CMD) \
 	    ngdbuild -aul -p $(PART) $(foreach c,$(CORES),-sd $(call ctr,$(c))) \
@@ -102,4 +125,4 @@ $(B):
 clean:
 	rm -rf build build-yosys
 
-.PHONY: all prog flash clean
+.PHONY: all sim prog flash clean
