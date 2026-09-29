@@ -45,8 +45,9 @@ New projects: a Makefile with `TOP`, `SRCS` (and optionally `UCF`, `CORES`,
 
 **[`projects/`](projects/README.md)** has the Verilog designs, written for
 learning and heavily commented: `kronometer` (stopwatch), `hack` (the
-nand2tetris Hack computer: CPU, ROM, RAM) and `vga` (colour bars on a VGA
-monitor), each with testbenches
+nand2tetris Hack computer: CPU, ROM, RAM), `vga` (colour bars on a VGA
+monitor) and `textmode` (40 x 30 characters of text on VGA), each with
+testbenches
 (`make sim`). `legacy/` keeps the original 2013–15 VHDL.
 
 ## Status

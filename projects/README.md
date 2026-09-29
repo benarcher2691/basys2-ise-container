@@ -9,6 +9,7 @@ details.
 | [`kronometer/`](kronometer/) | Stopwatch on the 7-segment display | 64 slices |
 | [`hack/`](hack/) | The Hack computer from nand2tetris: CPU, program ROM, data RAM | 144 slices, 3 block RAMs |
 | [`vga/`](vga/) | Three colour bars on a VGA monitor, 640 x 480 at 60 Hz | 35 slices |
+| [`textmode/`](textmode/) | 40 x 30 characters of uppercase text on VGA, white on blue, blinking cursor | 63 slices, 2 block RAMs |
 | [`common/`](common/) | Modules both use: input synchronizer, 7-segment decoder and display driver | – |
 
 The original 2013–15 VHDL versions are in [`../legacy/`](../legacy/).
@@ -109,3 +110,31 @@ Files:
 - `tb/vga_colorbars_tb.v`: simulates two full frames at 50 MHz and checks the
   line and frame lengths, sync pulses, back porch, bar widths and order, and
   that everything outside the picture is black
+
+## textmode
+
+40 columns x 30 rows of text on a VGA monitor: each character is an 8 x 8
+glyph from a character map, drawn at 16 x 16 pixels. The text comes from
+`mem/screen.txt` (edit it and run `make prog`; lowercase is shown as
+uppercase). The idea Ben planned in 2010 but never finished.
+
+Files:
+- `rtl/vga_text.v`: the top level: from pixel position to character cell,
+  character to glyph row, glyph row to pixel, as a 3-stage pipeline; the
+  blinking cursor
+- `rtl/text_ram.v`: the screen, one ASCII code per cell (1200 cells, one
+  block RAM), with a write port ready for a CPU
+- `rtl/char_rom.v`: the character map, 64 glyphs (space to `_`)
+- `../vga/rtl/vga_timing.v`: the VGA timing, shared with `vga/`
+- `mem/screen.txt`: the text; `tools/make_screen.py` turns it into
+  `build/screen.hex`
+- `mem/font.hex`, `mem/font.txt`: the character map, as plain hex and with a
+  picture of each glyph; made by `tools/make_font.py` from
+  `fonts/font8x8_basic.h` (font8x8 by Daniel Hepper, public domain, based on
+  the public domain IBM VGA fonts, https://github.com/dhepper/font8x8)
+- `tb/vga_text_tb.v`: reads the picture from the VGA outputs like a monitor,
+  checks all 307,200 pixels of two frames (cursor off and on) against its
+  own reference model, and saves the second frame as `build/frame.ppm`
+
+Characters outside space..`_` (0x20..0x5F) are folded: 0x60..0x7F show as
+0x40..0x5F (so `a` shows `A`, but also `|` shows `<`), anything else as a space.

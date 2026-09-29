@@ -44,9 +44,12 @@ These change the Verilog in `projects/hack/rtl/`. Test every change with
 6. **A screen.** The Basys-2 has a VGA connector. A text or low-resolution
    graphics display, fed from RAM, would bring the computer much closer to
    the book's Hack. This is a real project: VGA needs exact timing, and the
-   FPGA has only 4 block RAMs. A starting point exists: `projects/vga` draws
-   colour bars, and its `vga_timing.v` produces the sync signals and the
-   current pixel position that any picture needs.
+   FPGA has only 4 block RAMs. Two starting points exist: `projects/vga`
+   draws colour bars with `vga_timing.v`, which produces the sync signals
+   and pixel position any picture needs, and `projects/textmode` shows 40 x
+   30 characters from a text RAM that has a write port waiting for a CPU.
+   Connecting the Hack computer to it (for example: writing to address 1024
+   + n puts a character in cell n) would give Hack a text screen.
 
 ## Beyond this project
 

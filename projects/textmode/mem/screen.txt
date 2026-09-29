@@ -1,0 +1,28 @@
+ BASYS-2 TEXT MODE               40 X 30
+----------------------------------------
+
+HELLO! THIS IS BEN'S IDEA FROM 2010,
+FINALLY ON THE SCREEN.
+
+EACH CHARACTER IS AN 8 X 8 PIXEL GLYPH
+FROM A CHARACTER MAP, DRAWN TWICE AS
+LARGE: 16 X 16 PIXELS. 40 COLUMNS BY 30
+ROWS = 1200 CHARACTERS, ONE BLOCK RAM.
+
+THE CHARACTER SET, 64 GLYPHS:
+
+  !"#$%&'()*+,-./0123456789:;<=>?
+ @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+
+LOWERCASE IS SHOWN AS UPPERCASE:
+the quick brown fox jumps over
+the lazy dog.
+
++--------------------------------------+
+!  EDIT MEM/SCREEN.TXT AND REBUILD TO  !
+!  CHANGE THIS TEXT.                   !
++--------------------------------------+
+
+
+
+READY.
