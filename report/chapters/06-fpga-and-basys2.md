@@ -85,6 +85,107 @@ enough for the Hack computer:
 | 18 x 18-bit multipliers | 4 | 0 |
 | User I/O pins in this package | 83 | 33 |
 
+## Where the memory lives, and why there is no memory map
+
+If you have programmed a PC at a low level, you know that you must always
+know *where* things are: screen memory starts at some address, the keyboard
+at another. This information is the computer's **memory map**. On an FPGA
+it works differently, and it is worth understanding why.
+
+### In a PC: one bus, one numbering
+
+A PC has one CPU with one set of address wires, the **bus**, and every
+memory and device is connected to it. The CPU can only reach anything by
+putting an address on those shared wires. So everything needs its own,
+unique range of numbers, and the memory map is the agreement about which
+numbers reach which chip. The address is the *only* way in.
+
+### In an FPGA: no bus, just wires
+
+An FPGA has no CPU and no shared bus, unless you build them. A block RAM is
+a separate little memory chip *inside* the FPGA, with its **own** address
+pins, data pins, clock and enable. The programmable routing wires those
+pins **directly** to the logic that uses the memory, as if you had soldered
+a memory chip onto a circuit board with wires to just one circuit.
+
+In the text mode of this project, for example, the display logic's address
+wires go straight to the text memory. When the logic puts the number 85 on
+those wires, only that one block RAM sees it; nothing else is connected to
+them. So the addresses 0 to 1199 are **local** to that memory, like the
+numbered compartments of one drawer. Nothing needs a chip-wide number.
+
+Think of a PC as an office building where everything is reached through
+the reception desk by room number: you need the directory. An FPGA design is
+a workshop you build yourself: you put each drawer next to the bench that
+uses it, and while a drawer's compartments are numbered, nobody needs a
+building-wide number for them.
+
+### Where the block RAMs are on the chip
+
+Most of the FPGA is a grid of logic blocks (each made of slices of LUTs and
+flip-flops). Between them, the manufacturer placed columns of fixed-function
+blocks, because some jobs are done far better by dedicated silicon than by
+LUTs. The XC3S100E has one column of four block RAMs, each with an 18 x 18
+multiplier beside it:
+
+```
+    I/O blocks around the edge (the pins)
+   +----------------------------------------------+
+   |  CLB CLB CLB CLB   |RAM| |MUL|   CLB CLB CLB  |
+   |  CLB CLB CLB CLB   |   | |   |   CLB CLB CLB  |   RAMB16_X0Y3
+   |  CLB CLB CLB CLB   |RAM| |MUL|   CLB CLB CLB  |
+   |  CLB CLB CLB CLB   |   | |   |   CLB CLB CLB  |   RAMB16_X0Y2
+   |  CLB CLB CLB CLB   |RAM| |MUL|   CLB CLB CLB  |
+   |  CLB CLB CLB CLB   |   | |   |   CLB CLB CLB  |   RAMB16_X0Y1
+   |  CLB CLB CLB CLB   |RAM| |MUL|   CLB CLB CLB  |
+   |  CLB CLB CLB CLB   |   | |   |   CLB CLB CLB  |   RAMB16_X0Y0
+   +----------------------------------------------+
+    plus clock managers, global clock wiring and the routing mesh everywhere
+    (schematic: the real chip has many more CLBs than drawn)
+```
+
+All of these blocks hang on the same programmable routing, so a block RAM's
+pins can be connected to any LUT or flip-flop. The place-and-route tool
+decides which physical block holds which memory, choosing positions that
+keep the wires short. For two designs in this project it chose:
+
+| Design | Memory | Physical block |
+|---|---|---|
+| text mode | character map | `RAMB16_X0Y2` |
+| text mode | text screen | `RAMB16_X0Y3` |
+| Hack computer | program ROM | `RAMB16_X0Y1` |
+| Hack computer | RAM, low byte | `RAMB16_X0Y2` |
+| Hack computer | RAM, high byte | `RAMB16_X0Y3` |
+
+The same piece of silicon, `X0Y2`, holds the character map in one design
+and half of the Hack RAM in the other. The Verilog never mentions this: it
+only describes a memory and what it is connected to.
+
+(The LUTs can also act as tiny memories of 16 bits each, called
+*distributed RAM*. This is what the tools use when a memory cannot be
+placed in block RAM; see Appendix A.)
+
+### Memory maps come back with a CPU
+
+The PC's view is not wrong: it belongs one level higher up. A CPU has a
+single address output, and from its point of view there *is* a memory map.
+On an FPGA, **you design that map yourself**. The Hack CPU's `addressM` is
+wired only to its 2K of RAM, so its whole memory map is "0 to 2047: RAM".
+
+To give Hack a text screen, a few lines of **address decoding** would send
+some addresses to the text memory instead:
+
+```verilog
+wire to_screen = (addressM >= 1024) && (addressM < 1024 + 1200);
+assign screen_we = writeM && cpu_ce &&  to_screen;   // 1024.. -> text RAM
+assign ram_we    = writeM && cpu_ce && !to_screen;   // the rest -> RAM
+```
+
+From then on, Hack programs would see screen memory at address 1024, just
+as a PC program sees screen memory at its address. That is where every
+memory map comes from: a hardware designer wrote decoding logic like this.
+On an FPGA, that designer is you.
+
 ## Configuration: loading a circuit
 
 The FPGA's LUTs, routing switches and memories are set by the
