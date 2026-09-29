@@ -24,6 +24,7 @@ nand2tetris:legacy/nand2tetris:
 kronometer:projects/kronometer:
 kronometer-yosys:projects/kronometer:SYNTH=yosys
 hack:projects/hack:
+hack-yosys:projects/hack:SYNTH=yosys
 "
 
 run_all() {   # $1 = result dir; uses ISE_IMAGE / ISE_EXEC from the environment

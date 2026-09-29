@@ -58,10 +58,16 @@ all: $(B)/$(TOP).bit
 # Runs in the build dir, like the ISE tools, so $readmemb finds EXTRA_DEPS.
 # -flatten: ISE's edif2ngd wants one flat netlist. Flattening leaves
 # $scopeinfo marker cells behind, which write_edif would emit as references
-# to an undefined cell, so they're deleted before writing
+# to an undefined cell, so they're deleted before writing. setundef -zero
+# ties inputs yosys left undefined (e.g. unused block-RAM data/parity
+# inputs) to 0: write_edif would drop them, and bitgen's DRC rejects a block
+# RAM whose configured parity input is unconnected.
 # (write_edif -pvector bra is what synth_xilinx -edif would run).
+# tools/yosys-edif-fix.py then turns the 1-bit parity pins of 9-bit-wide
+# block RAMs into the 1-bit buses ISE's library declares.
 $(B)/$(TOP).edf: $(SRCS) $(EXTRA_DEPS) | $(B)
-	cd $(B) && yosys -q -l yosys.log -p 'read_verilog $(abspath $(SRCS)); synth_xilinx -family xc3se -top $(TOP) -flatten -ise; delete t:$$scopeinfo; write_edif -pvector bra $(TOP).edf'
+	cd $(B) && yosys -q -l yosys.log -p 'read_verilog $(abspath $(SRCS)); synth_xilinx -family xc3se -top $(TOP) -flatten -ise; delete t:$$scopeinfo; setundef -zero; write_edif -pvector bra $(TOP).edf'
+	python3 $(ROOT)/tools/yosys-edif-fix.py $@
 	@grep -A30 'Printing statistics' $(B)/yosys.log | grep -E 'cells|FD|LUT|MUXCY|XORCY|BUF|RAM' | head -12 || true
 
 # Simulation with Icarus Verilog, run in the build dir (same file lookup as

@@ -24,11 +24,9 @@ make flash    # write it to the flash so it starts at power-on (JP3 on ROM)
 make SYNTH=yosys   # the same, synthesized with yosys instead of XST
 ```
 
-yosys works for `kronometer` (149 slices vs XST's 64). For `hack` it doesn't
-yet: yosys maps the 2K×16 RAM onto two 9-bit-wide block RAMs
-(`RAMB16_S9_S9`) and writes their 1-bit parity pins as plain wires, while
-ISE declares them as 1-bit buses (`DOPA[0:0]`), so ngdbuild rejects the
-netlist. Use XST (the default) for `hack`.
+yosys builds both: `kronometer` in 149 slices (XST: 64) and `hack` in
+243 slices plus 3 block RAMs (XST: 144). XST gives smaller results;
+Spartan-3E support in yosys is still marked experimental.
 
 `make -C ../../boards/basys2 factory` puts Digilent's factory demo back in
 the flash.
