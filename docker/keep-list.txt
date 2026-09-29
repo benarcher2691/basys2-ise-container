@@ -1,5 +1,5 @@
 # Files under /opt/Xilinx opened by tests/regress.sh (docker/trace-files.sh).
-# Generated 2026-09-28; input for docker/Dockerfile.s3e.
+# Generated 2026-09-29; input for docker/Dockerfile.s3e.
 /opt/Xilinx/14.7/ISE_DS/common/.settings64.sh
 /opt/Xilinx/14.7/ISE_DS/ISE
 /opt/Xilinx/14.7/ISE_DS/ISE/
@@ -174,6 +174,8 @@
 /opt/Xilinx/14.7/ISE_DS/ISE/data/Pr_Logical.llr
 /opt/Xilinx/14.7/ISE_DS/ISE/data/promgen.usg
 /opt/Xilinx/14.7/ISE_DS/ISE/data/proms.acd
+/opt/Xilinx/14.7/ISE_DS/ISE/data/propbin.acd
+/opt/Xilinx/14.7/ISE_DS/ISE/data/prophex.acd
 /opt/Xilinx/14.7/ISE_DS/ISE/data/reportRegistry.xml
 /opt/Xilinx/14.7/ISE_DS/ISE/data/reports
 /opt/Xilinx/14.7/ISE_DS/ISE/data/reports/

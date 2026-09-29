@@ -140,14 +140,19 @@ tests/regress.sh compare trace ise:14.7-s3e    # rebuild everything with it and 
   `ISE_EXEC`).
 - **What the flows cover:**
   - blinky with XST and with yosys
-  - kronometer5 (VHDL)
-  - nand2tetris (VHDL plus IP-core netlists)
+  - kronometer5 and nand2tetris (VHDL, the latter with IP-core netlists)
+  - `projects/kronometer` with XST and with yosys
+  - `projects/hack` with XST and with yosys (block RAMs from `$readmemb`)
   - the flash chain (`bitgen` CClk, `promgen`, iMPACT SVF)
   - XST syntax errors in Verilog and VHDL
   - `-h` for every tool
 - **Result (2026-09-28):** 1,336 paths, 234 MB unpacked, **158 MB image**.
   The four bitstreams match the full image's bit for bit (header with the
   build date excluded), and so do the PROM image and the XST error messages.
+- **Refreshed 2026-09-29** for the Verilog projects: 1,338 paths. The two new
+  ones, `ISE/data/prophex.acd` and `propbin.acd`, are what edif2ngd needs to
+  read hex and binary properties (LUT and block-RAM contents) in yosys
+  netlists. All eight bitstreams match the full image's.
 - **One gap the trace can't see:** bitgen checks that the `bin/lin64/wbtc`
   wrapper *exists* (a `stat`, invisible to inotify) before starting
   WebTalk. `Dockerfile.s3e` therefore keeps the wrapper of every kept
